@@ -17,7 +17,20 @@ export default function HomePage() {
 		// fetchSystemHealth().then(setSystemHealth)
 		// fetchPlatformStats().then(setPlatformStats)
 		// fetchCurrentAdmin().then(setCurrentAdmin)
-	}, [setCurrentAdmin, setSystemHealth, setPlatformStats]);
+
+		// Temporary: Set a default admin user so the dashboard can render
+		// This should be replaced with actual authentication
+		if (!currentAdmin) {
+			setCurrentAdmin({
+				id: "admin-1",
+				name: "System Administrator",
+				email: "admin@boletrics.com",
+				role: "super_admin",
+				lastLoginAt: new Date().toISOString(),
+				status: "active",
+			});
+		}
+	}, [currentAdmin, setCurrentAdmin, setSystemHealth, setPlatformStats]);
 
 	if (!currentAdmin) {
 		return (
