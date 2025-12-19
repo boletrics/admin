@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useThemeEffect } from "@/hooks/use-theme"
-import { AdminDashboardLayout } from "@/components/admin/admin-dashboard-layout"
-import { TenantsPage } from "@/components/admin/tenants-page"
+import { useThemeEffect } from "@/hooks/use-theme";
+import { AdminDashboardLayout } from "@/components/admin/admin-dashboard-layout";
+import { TenantsPage } from "@/components/admin/tenants-page";
 
 export default function TenantsManagementPage() {
-  useThemeEffect()
+	useThemeEffect();
 
-  return (
-    <AdminDashboardLayout>
-      <TenantsPage />
-    </AdminDashboardLayout>
-  )
+	return (
+		<AdminDashboardLayout>
+			<TenantsPage />
+		</AdminDashboardLayout>
+	);
 }

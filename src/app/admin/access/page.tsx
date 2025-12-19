@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useThemeEffect } from "@/hooks/use-theme"
-import { AdminDashboardLayout } from "@/components/admin/admin-dashboard-layout"
-import { AccessControlPage } from "@/components/admin/access-control-page"
+import { useThemeEffect } from "@/hooks/use-theme";
+import { AdminDashboardLayout } from "@/components/admin/admin-dashboard-layout";
+import { AccessControlPage } from "@/components/admin/access-control-page";
 
 export default function AccessControlRoutePage() {
-  useThemeEffect()
+	useThemeEffect();
 
-  return (
-    <AdminDashboardLayout>
-      <AccessControlPage />
-    </AdminDashboardLayout>
-  )
+	return (
+		<AdminDashboardLayout>
+			<AccessControlPage />
+		</AdminDashboardLayout>
+	);
 }

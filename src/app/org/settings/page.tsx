@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { OrgDashboardLayout } from "@/components/org/org-dashboard-layout"
-import { OrgSettingsForm } from "@/components/org/org-settings-form"
-import { useThemeEffect } from "@/hooks/use-theme"
+import { OrgDashboardLayout } from "@/components/org/org-dashboard-layout";
+import { OrgSettingsForm } from "@/components/org/org-settings-form";
+import { useThemeEffect } from "@/hooks/use-theme";
 
 export default function OrgSettingsPage() {
-  useThemeEffect()
+	useThemeEffect();
 
-  return (
-    <OrgDashboardLayout>
-      <OrgSettingsForm />
-    </OrgDashboardLayout>
-  )
+	return (
+		<OrgDashboardLayout>
+			<OrgSettingsForm />
+		</OrgDashboardLayout>
+	);
 }

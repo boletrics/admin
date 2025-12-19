@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useThemeEffect } from "@/hooks/use-theme"
-import { AdminDashboardLayout } from "@/components/admin/admin-dashboard-layout"
-import { DatabaseInfraPage } from "@/components/admin/database-infra-page"
+import { useThemeEffect } from "@/hooks/use-theme";
+import { AdminDashboardLayout } from "@/components/admin/admin-dashboard-layout";
+import { DatabaseInfraPage } from "@/components/admin/database-infra-page";
 
 export default function DatabaseInfraRoutePage() {
-  useThemeEffect()
+	useThemeEffect();
 
-  return (
-    <AdminDashboardLayout>
-      <DatabaseInfraPage />
-    </AdminDashboardLayout>
-  )
+	return (
+		<AdminDashboardLayout>
+			<DatabaseInfraPage />
+		</AdminDashboardLayout>
+	);
 }

@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useThemeEffect } from "@/hooks/use-theme"
-import { AdminDashboardLayout } from "@/components/admin/admin-dashboard-layout"
-import { RevenueAnalyticsPage } from "@/components/admin/revenue-analytics-page"
+import { useThemeEffect } from "@/hooks/use-theme";
+import { AdminDashboardLayout } from "@/components/admin/admin-dashboard-layout";
+import { RevenueAnalyticsPage } from "@/components/admin/revenue-analytics-page";
 
 export default function RevenueAnalyticsRoutePage() {
-  useThemeEffect()
+	useThemeEffect();
 
-  return (
-    <AdminDashboardLayout>
-      <RevenueAnalyticsPage />
-    </AdminDashboardLayout>
-  )
+	return (
+		<AdminDashboardLayout>
+			<RevenueAnalyticsPage />
+		</AdminDashboardLayout>
+	);
 }

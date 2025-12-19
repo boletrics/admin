@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useThemeEffect } from "@/hooks/use-theme"
-import { AdminDashboardLayout } from "@/components/admin/admin-dashboard-layout"
-import { AnalyticsOverviewPage } from "@/components/admin/analytics-overview-page"
+import { useThemeEffect } from "@/hooks/use-theme";
+import { AdminDashboardLayout } from "@/components/admin/admin-dashboard-layout";
+import { AnalyticsOverviewPage } from "@/components/admin/analytics-overview-page";
 
 export default function AnalyticsRoutePage() {
-  useThemeEffect()
+	useThemeEffect();
 
-  return (
-    <AdminDashboardLayout>
-      <AnalyticsOverviewPage />
-    </AdminDashboardLayout>
-  )
+	return (
+		<AdminDashboardLayout>
+			<AnalyticsOverviewPage />
+		</AdminDashboardLayout>
+	);
 }
