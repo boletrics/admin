@@ -1,3 +1,12 @@
+# 1.0.0 (2025-12-19)
+
+
+### Features
+
+* Add many new dependencies to pnpm-lock.yaml ([a898164](https://github.com/boletrics/admin/commit/a898164ec4326bdd7b0d047a31f9f80d896a1975))
+* Add temporary default admin for dashboard rendering ([5c50d2f](https://github.com/boletrics/admin/commit/5c50d2fdcf7630f4c71d087a037aa61152672729))
+* Skip hydration for zustand stores and add document check ([6a09f16](https://github.com/boletrics/admin/commit/6a09f1679c8b2765f4ed7776c5ca2fb162470061))
+
 # [1.1.0](https://github.com/algtools/next-template/compare/v1.0.0...v1.1.0) (2025-12-17)
 
 
