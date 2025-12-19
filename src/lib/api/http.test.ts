@@ -94,4 +94,42 @@ describe("api/http fetchJson", () => {
 			expect(err.body).toBe("oops");
 		}
 	});
+
+	it("handles missing content-type header", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => {
+				return new Response("ok", {
+					status: 200,
+					headers: {},
+				});
+			}),
+		);
+
+		const res = await fetchJson<string>("https://example.com");
+		expect(res.status).toBe(200);
+		expect(res.json).toBe("ok");
+	});
+
+	it("throws ApiError with text body when content-type is missing on error response", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => {
+				return new Response("error", {
+					status: 404,
+					statusText: "Not Found",
+					headers: {},
+				});
+			}),
+		);
+
+		try {
+			await fetchJson("https://example.com");
+			throw new Error("expected to throw");
+		} catch (e) {
+			const err = e as ApiError;
+			expect(err.status).toBe(404);
+			expect(err.body).toBe("error");
+		}
+	});
 });
