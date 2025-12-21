@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { logout } from "@/lib/auth/actions";
 
 const monitoringNavItems = [
 	{
@@ -245,6 +246,10 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
 }
 
 function NavUser() {
+	const handleLogout = async () => {
+		await logout();
+	};
+
 	return (
 		<SidebarMenu>
 			<SidebarMenuItem>
@@ -303,7 +308,10 @@ function NavUser() {
 							Documentation
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem className="text-destructive">
+						<DropdownMenuItem
+							onClick={handleLogout}
+							className="text-destructive"
+						>
 							<LogOut className="mr-2 h-4 w-4" />
 							Sign Out
 						</DropdownMenuItem>

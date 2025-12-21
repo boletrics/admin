@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @deprecated This store is deprecated for session management.
+ * Use better-auth system from @/lib/auth for admin authentication.
+ * This store is kept for guest email functionality in public routes.
+ */
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { User } from "@/lib/mock-data";

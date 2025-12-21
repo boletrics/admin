@@ -14,10 +14,15 @@ import {
 import Link from "next/link";
 import { useLocale } from "@/hooks/use-locale";
 import { useAuthStore } from "@/lib/auth-store";
+import { logout } from "@/lib/auth/actions";
 
 export function UserAvatar() {
 	const { t } = useLocale();
-	const { user, signOut } = useAuthStore();
+	const { user } = useAuthStore();
+
+	const handleLogout = async () => {
+		await logout();
+	};
 
 	// Guest avatar (not signed in)
 	if (!user) {
@@ -65,7 +70,7 @@ export function UserAvatar() {
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
-					onClick={signOut}
+					onClick={handleLogout}
 					className="text-destructive focus:text-destructive"
 				>
 					{t("nav.signOut")}

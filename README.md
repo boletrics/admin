@@ -44,6 +44,17 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
+## Environment Variables
+
+This application uses Better Auth for authentication. Configure the following environment variables:
+
+- `NEXT_PUBLIC_AUTH_SERVICE_URL` - The URL of the authentication service API (e.g., `https://auth-svc.example.workers.dev`)
+- `NEXT_PUBLIC_AUTH_APP_URL` - The URL of the authentication frontend application (e.g., `https://auth.example.workers.dev`)
+
+These can be set in `.env.local` for local development or in the Cloudflare dashboard for production deployments.
+
+**Note:** Admin routes are protected by middleware and will redirect to the auth app login page if no valid session is present.
+
 ## Deploying To Production
 
 | Command                           | Action                                       |
