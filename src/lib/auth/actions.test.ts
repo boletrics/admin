@@ -20,8 +20,10 @@ describe("auth/actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		// Reset window.location
-		delete (window as { location?: { href?: string } }).location;
-		window.location = { href: "" } as Location;
+		Object.defineProperty(window, "location", {
+			value: { href: "" },
+			writable: true,
+		});
 	});
 
 	it("calls signOut and redirects on success", async () => {
@@ -31,7 +33,11 @@ describe("auth/actions", () => {
 		vi.mocked(authClient.signOut).mockImplementation((options) => {
 			// Simulate onSuccess callback being called
 			if (options?.fetchOptions?.onSuccess) {
-				options.fetchOptions.onSuccess();
+				options.fetchOptions.onSuccess({
+					data: null,
+					response: new Response(),
+					request: new Request("https://example.com"),
+				} as Parameters<NonNullable<typeof options.fetchOptions.onSuccess>>[0]);
 			}
 			return Promise.resolve();
 		});

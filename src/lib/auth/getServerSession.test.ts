@@ -118,7 +118,10 @@ describe("auth/getServerSession", () => {
 		vi.stubGlobal(
 			"fetch",
 			vi.fn(async (url: string, options?: RequestInit) => {
-				expect(options?.headers).toHaveProperty("Cookie", "session=abc123; other=value");
+				expect(options?.headers).toHaveProperty(
+					"Cookie",
+					"session=abc123; other=value",
+				);
 				return new Response(JSON.stringify({}), {
 					status: 200,
 					headers: { "content-type": "application/json" },

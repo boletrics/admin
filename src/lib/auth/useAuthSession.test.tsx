@@ -6,7 +6,12 @@ import type { Session } from "./types";
 
 // Mock nanostores/react to return store value directly
 vi.mock("@nanostores/react", () => ({
-	useStore: (store: ReturnType<typeof sessionStore>) => store.get(),
+	useStore: vi.fn((store: unknown) => {
+		if (store && typeof store === "object" && "get" in store) {
+			return (store as { get: () => unknown }).get();
+		}
+		return null;
+	}),
 }));
 
 describe("auth/useAuthSession", () => {
@@ -21,7 +26,9 @@ describe("auth/useAuthSession", () => {
 				<div>
 					<span data-testid="data">{data ? "has-data" : "no-data"}</span>
 					<span data-testid="error">{error ? "has-error" : "no-error"}</span>
-					<span data-testid="pending">{isPending ? "pending" : "not-pending"}</span>
+					<span data-testid="pending">
+						{isPending ? "pending" : "not-pending"}
+					</span>
 				</div>
 			);
 		};

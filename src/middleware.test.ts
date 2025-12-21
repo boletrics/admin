@@ -7,9 +7,8 @@ vi.mock("better-auth/cookies", () => ({
 }));
 
 vi.mock("./middleware", async () => {
-	const actual = await vi.importActual<typeof import("./middleware")>(
-		"./middleware",
-	);
+	const actual =
+		await vi.importActual<typeof import("./middleware")>("./middleware");
 	return {
 		...actual,
 	};
@@ -33,7 +32,9 @@ describe("middleware", () => {
 		const location = response.headers.get("location");
 		expect(location).toContain("https://auth.example.com/login");
 		expect(location).toContain("redirect_to=");
-		expect(location).toContain(encodeURIComponent("https://example.com/admin/users"));
+		expect(location).toContain(
+			encodeURIComponent("https://example.com/admin/users"),
+		);
 	});
 
 	it("allows request when session cookie exists", async () => {
