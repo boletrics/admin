@@ -10,8 +10,7 @@ describe("auth/config", () => {
 				process.env.NEXT_PUBLIC_AUTH_SERVICE_URL = "https://auth-svc.test.com";
 				expect(getAuthServiceUrl()).toBe("https://auth-svc.test.com");
 			} finally {
-				if (prev === undefined)
-					delete process.env.NEXT_PUBLIC_AUTH_SERVICE_URL;
+				if (prev === undefined) delete process.env.NEXT_PUBLIC_AUTH_SERVICE_URL;
 				else process.env.NEXT_PUBLIC_AUTH_SERVICE_URL = prev;
 			}
 		});
@@ -25,8 +24,7 @@ describe("auth/config", () => {
 					"https://auth-svc.example.workers.dev",
 				);
 			} finally {
-				if (prev === undefined)
-					delete process.env.NEXT_PUBLIC_AUTH_SERVICE_URL;
+				if (prev === undefined) delete process.env.NEXT_PUBLIC_AUTH_SERVICE_URL;
 				else process.env.NEXT_PUBLIC_AUTH_SERVICE_URL = prev;
 			}
 		});
