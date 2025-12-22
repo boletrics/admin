@@ -14,19 +14,47 @@ const getAuthServiceUrl = () => {
 	);
 };
 
+// Roles that are allowed to access the admin app
+const ADMIN_ROLES = ["admin"];
+
+type SessionUser = {
+	id: string;
+	email: string;
+	name?: string;
+	role?: string;
+	banned?: boolean;
+};
+
+type SessionData = {
+	session?: unknown;
+	user?: SessionUser;
+};
+
 function redirectToLogin(request: NextRequest): NextResponse {
 	const authAppUrl = getAuthAppUrl();
 	const returnUrl = encodeURIComponent(request.url);
 	return NextResponse.redirect(`${authAppUrl}/login?redirect_to=${returnUrl}`);
 }
 
+function redirectToUnauthorized(request: NextRequest): NextResponse {
+	const url = request.nextUrl.clone();
+	url.pathname = "/unauthorized";
+	return NextResponse.rewrite(url);
+}
+
 // Routes that don't require authentication (user handles login flow themselves)
-const PUBLIC_ROUTES = ["/invitations/accept"];
+const PUBLIC_ROUTES = ["/unauthorized"];
 
 function isPublicRoute(pathname: string): boolean {
 	return PUBLIC_ROUTES.some(
 		(route) => pathname === route || pathname.startsWith(`${route}/`),
 	);
+}
+
+function isAdminUser(user: SessionUser): boolean {
+	// Check if user has admin role
+	if (!user.role) return false;
+	return ADMIN_ROLES.includes(user.role);
 }
 
 export async function middleware(request: NextRequest) {
@@ -63,14 +91,21 @@ export async function middleware(request: NextRequest) {
 			return redirectToLogin(request);
 		}
 
-		const data = (await response.json()) as {
-			session?: unknown;
-			user?: unknown;
-		};
+		const data = (await response.json()) as SessionData;
 
 		// No valid session data → redirect to auth app
 		if (!data?.session || !data?.user) {
 			return redirectToLogin(request);
+		}
+
+		// Check if user is banned
+		if (data.user.banned) {
+			return redirectToLogin(request);
+		}
+
+		// Check if user has admin role
+		if (!isAdminUser(data.user)) {
+			return redirectToUnauthorized(request);
 		}
 	} catch {
 		// Auth service error → redirect to auth app
