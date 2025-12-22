@@ -42,6 +42,9 @@ export default defineConfig({
 				"src/lib/i18n.ts",
 				"src/lib/utils.ts",
 				"src/lib/slugify.ts",
+				// Auth adapter - index and types are just exports/type definitions
+				"src/lib/auth/index.ts",
+				"src/lib/auth/types.ts",
 			],
 			thresholds: {
 				lines: 85,
