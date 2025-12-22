@@ -52,6 +52,8 @@ import {
 } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useAuthSession } from "@/lib/auth/useAuthSession";
+import { logout } from "@/lib/auth/actions";
 
 const monitoringNavItems = [
 	{
@@ -245,6 +247,25 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
 }
 
 function NavUser() {
+	const { data: session, isPending } = useAuthSession();
+
+	// Get user initials from name
+	const getUserInitials = (name: string) => {
+		const parts = name.trim().split(/\s+/);
+		if (parts.length >= 2) {
+			return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+		}
+		return name.substring(0, 2).toUpperCase();
+	};
+
+	const userInitials = session?.user?.name
+		? getUserInitials(session.user.name)
+		: "SA";
+
+	const handleLogout = async () => {
+		await logout();
+	};
+
 	return (
 		<SidebarMenu>
 			<SidebarMenuItem>
@@ -255,15 +276,24 @@ function NavUser() {
 							className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 						>
 							<Avatar className="h-8 w-8 rounded-lg">
-								<AvatarImage src="/admin-avatar.png" alt="Admin" />
+								{session?.user?.image ? (
+									<AvatarImage
+										src={session.user.image}
+										alt={session.user.name}
+									/>
+								) : null}
 								<AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
-									SA
+									{userInitials}
 								</AvatarFallback>
 							</Avatar>
 							<div className="grid flex-1 text-left text-sm leading-tight">
-								<span className="truncate font-semibold">System Admin</span>
+								<span className="truncate font-semibold">
+									{isPending ? "Cargando..." : session?.user?.name || "Usuario"}
+								</span>
 								<span className="truncate text-xs text-muted-foreground">
-									admin@boletrics.com
+									{isPending
+										? "..."
+										: session?.user?.email || "usuario@ejemplo.com"}
 								</span>
 							</div>
 							<ChevronsUpDown className="ml-auto size-4" />
@@ -278,17 +308,26 @@ function NavUser() {
 						<DropdownMenuLabel className="p-0 font-normal">
 							<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
 								<Avatar className="h-8 w-8 rounded-lg">
-									<AvatarImage src="/admin-avatar.png" alt="Admin" />
+									{session?.user?.image ? (
+										<AvatarImage
+											src={session.user.image}
+											alt={session.user.name}
+										/>
+									) : null}
 									<AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
-										SA
+										{userInitials}
 									</AvatarFallback>
 								</Avatar>
 								<div className="grid flex-1 text-left text-sm leading-tight">
 									<span className="truncate font-semibold">
-										System Administrator
+										{isPending
+											? "Cargando..."
+											: session?.user?.name || "Usuario"}
 									</span>
 									<span className="truncate text-xs text-muted-foreground">
-										admin@boletrics.com
+										{isPending
+											? "..."
+											: session?.user?.email || "usuario@ejemplo.com"}
 									</span>
 								</div>
 							</div>
@@ -303,7 +342,10 @@ function NavUser() {
 							Documentation
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem className="text-destructive">
+						<DropdownMenuItem
+							onClick={handleLogout}
+							className="text-destructive"
+						>
 							<LogOut className="mr-2 h-4 w-4" />
 							Sign Out
 						</DropdownMenuItem>

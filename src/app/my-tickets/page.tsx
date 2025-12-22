@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, MapPin, TicketIcon, Download, Mail } from "lucide-react";
 import Image from "next/image";
 import { Header } from "@/components/header";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocale } from "@/hooks/use-locale";
 import { useThemeEffect } from "@/hooks/use-theme";
-import { useAuthStore } from "@/lib/auth-store";
+import { useAuthSession } from "@/lib/auth/useAuthSession";
 import { mockOrders, mockEvents } from "@/lib/mock-data";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
@@ -19,17 +19,30 @@ export default function MyTicketsPage() {
 	useThemeEffect();
 	const router = useRouter();
 	const { t, locale } = useLocale();
-	const { user, guestEmail } = useAuthStore();
+	const { data: session, isPending } = useAuthSession();
 	const { toast } = useToast();
 	const [activeTab, setActiveTab] = useState("upcoming");
 
 	// Redirect if not authenticated
-	if (!user && !guestEmail) {
-		router.push("/auth");
+	useEffect(() => {
+		if (!isPending && !session) {
+			router.push("/auth");
+		}
+	}, [session, isPending, router]);
+
+	if (isPending) {
+		return (
+			<div className="min-h-screen bg-background flex items-center justify-center">
+				<div className="text-muted-foreground">Loading...</div>
+			</div>
+		);
+	}
+
+	if (!session) {
 		return null;
 	}
 
-	const userEmail = user?.email || guestEmail;
+	const userEmail = session.user.email;
 
 	const userOrders = mockOrders.filter((order) => order.email === userEmail);
 
@@ -191,9 +204,9 @@ export default function MyTicketsPage() {
 			<div className="container mx-auto px-4 py-8">
 				<div className="mb-8">
 					<h1 className="text-3xl font-bold mb-2">{t("nav.myTickets")}</h1>
-					{user && (
+					{session && (
 						<p className="text-muted-foreground">
-							{t("tickets.welcome") || "Welcome back"}, {user.firstName}
+							{t("tickets.welcome") || "Welcome back"}, {session.user.name}
 						</p>
 					)}
 				</div>
