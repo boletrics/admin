@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/boletrics/admin/compare/v1.2.0...v1.3.0) (2025-12-22)
+
+
+### Features
+
+* **auth:** add admin role validation in middleware ([5c4f3e1](https://github.com/boletrics/admin/commit/5c4f3e1fe410e0be2e61615b7de7ec91bba17055))
+
 # [1.2.0](https://github.com/boletrics/admin/compare/v1.1.0...v1.2.0) (2025-12-22)
 
 
