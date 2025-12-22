@@ -5,6 +5,10 @@ export type Session = {
 		email: string;
 		image: string | null;
 		emailVerified: boolean;
+		role?: string;
+		banned?: boolean;
+		banReason?: string | null;
+		banExpires?: Date | null;
 		createdAt: Date;
 		updatedAt: Date;
 	};
@@ -15,6 +19,7 @@ export type Session = {
 		expiresAt: Date;
 		createdAt: Date;
 		updatedAt: Date;
+		impersonatedBy?: string;
 		ipAddress?: string;
 		userAgent?: string;
 	};

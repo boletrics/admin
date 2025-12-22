@@ -21,6 +21,8 @@ export default defineConfig({
 				"src/components/ui/**",
 				// Next.js App Router entrypoints/route wiring (typically thin wrappers)
 				"src/app/**",
+				// Next.js middleware (requires integration testing)
+				"src/middleware.ts",
 				// Mock data files (not production code)
 				"src/lib/**/*mock*.ts",
 				"src/lib/**/*-mock-data.ts",
@@ -45,6 +47,8 @@ export default defineConfig({
 				// Auth adapter - index and types are just exports/type definitions
 				"src/lib/auth/index.ts",
 				"src/lib/auth/types.ts",
+				// Admin API functions (requires integration testing with auth service)
+				"src/lib/auth/admin.ts",
 			],
 			thresholds: {
 				lines: 85,
