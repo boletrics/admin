@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/boletrics/admin/compare/v1.1.0...v1.2.0) (2025-12-22)
+
+
+### Features
+
+* **auth:** implement admin plugin with user management functions ([8f16a4b](https://github.com/boletrics/admin/commit/8f16a4b5c1e2402c53af01bc126384d73c5c129b))
+
 # [1.1.0](https://github.com/boletrics/admin/compare/v1.0.0...v1.1.0) (2025-12-22)
 
 
