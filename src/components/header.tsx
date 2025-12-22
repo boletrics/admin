@@ -11,13 +11,13 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocale } from "@/hooks/use-locale";
-import { useAuthStore } from "@/lib/auth-store";
+import { useAuthSession } from "@/lib/auth/useAuthSession";
 import { UserAvatar } from "@/components/user-avatar";
 
 export function Header() {
 	const { t } = useLocale();
 	const router = useRouter();
-	const { user, signOut } = useAuthStore();
+	const { data: session } = useAuthSession();
 	const [searchQuery, setSearchQuery] = useState("");
 
 	const handleSearch = (e: React.FormEvent) => {
@@ -54,7 +54,7 @@ export function Header() {
 					</form>
 
 					<nav className="flex items-center gap-2 shrink-0">
-						{user && (
+						{session && (
 							<Button
 								variant="ghost"
 								size="sm"
@@ -68,10 +68,10 @@ export function Header() {
 						<LanguageToggle />
 						<ThemeToggle />
 
-						{user ? (
+						{session ? (
 							<div className="flex items-center gap-2">
 								<span className="text-sm text-muted-foreground hidden lg:inline">
-									{user.firstName}
+									{session.user.name}
 								</span>
 								<UserAvatar />
 							</div>
