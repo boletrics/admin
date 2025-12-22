@@ -1,3 +1,12 @@
+# [1.1.0](https://github.com/boletrics/admin/compare/v1.0.0...v1.1.0) (2025-12-22)
+
+
+### Features
+
+* Add auth module and tests ([569b277](https://github.com/boletrics/admin/commit/569b277ed39d82b67f697d9149fa8bb2f69fb9c5))
+* Add user session and logout to sidebar ([35e9509](https://github.com/boletrics/admin/commit/35e9509f9d363e4a574e2fe39e1e6b04159121cf))
+* Implement authentication using better-auth ([2a00769](https://github.com/boletrics/admin/commit/2a00769166acd28b4d8552ab86a6d9c8b71e529d))
+
 # 1.0.0 (2025-12-19)
 
 
