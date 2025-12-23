@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/boletrics/admin/compare/v1.3.0...v1.4.0) (2025-12-23)
+
+
+### Features
+
+* **access:** add impersonation banner, sessions viewer and ban expiry ([36fd172](https://github.com/boletrics/admin/commit/36fd1724165e021f142a362512e7f1e378077268))
+
 # [1.3.0](https://github.com/boletrics/admin/compare/v1.2.0...v1.3.0) (2025-12-22)
 
 
