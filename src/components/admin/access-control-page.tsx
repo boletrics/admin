@@ -83,6 +83,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+// Import directly from individual files to avoid server-only code in client bundle
 import {
 	listUsers,
 	createUser,
@@ -94,10 +95,10 @@ import {
 	impersonateUser,
 	stopImpersonating,
 	listUserSessions,
-	useAuthSession,
 	type AdminUser,
 	type ListUsersResult,
-} from "@/lib/auth";
+} from "@/lib/auth/admin";
+import { useAuthSession } from "@/lib/auth/useAuthSession";
 
 // Session type for user sessions
 type UserSession = {
