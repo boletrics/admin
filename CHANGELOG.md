@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/boletrics/admin/compare/v1.4.0...v1.4.1) (2025-12-23)
+
+
+### Bug Fixes
+
+* **access:** import from individual files to avoid server code in client ([97dda13](https://github.com/boletrics/admin/commit/97dda130730b0af7502c82a0f7de3dddda6767cc))
+
 # [1.4.0](https://github.com/boletrics/admin/compare/v1.3.0...v1.4.0) (2025-12-23)
 
 
