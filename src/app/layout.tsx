@@ -4,6 +4,7 @@ import { Inter, Source_Serif_4, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { getServerSession } from "@/lib/auth/getServerSession";
 import { SessionHydrator } from "@/lib/auth/useAuthSession";
+import { SwrProvider } from "@/lib/api/swr-provider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -45,8 +46,10 @@ export default async function RootLayout({
 		<html lang="en" suppressHydrationWarning>
 			<body className={`font-sans antialiased`}>
 				<SessionHydrator serverSession={session}>
-					{children}
-					<Analytics />
+					<SwrProvider>
+						{children}
+						<Analytics />
+					</SwrProvider>
 				</SessionHydrator>
 			</body>
 		</html>
