@@ -36,16 +36,34 @@ export interface PaginatedResult<T> {
 // Organization Types (Platform Admin View)
 // ============================================================================
 
+/**
+ * Organization identity (from auth-svc).
+ * This is the source of truth for organization name, slug, logo, and membership.
+ */
 export interface Organization {
 	id: string;
 	name: string;
 	slug: string;
-	logo_url?: string | null;
-	description?: string | null;
-	website?: string | null;
+	logo?: string | null;
+	metadata?: Record<string, unknown> | null;
+	createdAt: string;
+	// Admin-specific aggregated fields
+	total_events?: number;
+	total_revenue?: number;
+	member_count?: number;
+}
+
+/**
+ * Organization settings (from tickets-svc).
+ * Ticketing-specific configuration like plan, commission, payout schedule.
+ */
+export interface OrganizationSettings {
+	org_id: string;
 	email: string;
 	phone?: string | null;
 	tax_id?: string | null;
+	description?: string | null;
+	website?: string | null;
 	status: "pending" | "active" | "suspended" | "inactive";
 	plan: "starter" | "professional" | "enterprise";
 	currency: "MXN" | "USD";
@@ -55,15 +73,19 @@ export interface Organization {
 	payout_schedule: "daily" | "weekly" | "biweekly" | "monthly";
 	created_at: string;
 	updated_at: string;
-	// Admin-specific fields
-	total_events?: number;
-	total_revenue?: number;
-	member_count?: number;
 }
 
-export interface UpdateOrganizationInput {
-	status?: Organization["status"];
-	plan?: Organization["plan"];
+/**
+ * Combined organization with both identity and settings.
+ * Used in admin dashboard views where both are needed.
+ */
+export interface OrganizationWithSettings extends Organization {
+	settings?: OrganizationSettings;
+}
+
+export interface UpdateOrganizationSettingsInput {
+	status?: OrganizationSettings["status"];
+	plan?: OrganizationSettings["plan"];
 	commission_rate?: number;
 }
 
@@ -121,7 +143,7 @@ export type EventStatus = "draft" | "published" | "cancelled" | "completed";
 
 export interface Event {
 	id: string;
-	organization_id: string;
+	org_id: string; // References auth-svc organization.id
 	venue_id: string;
 	title: string;
 	slug: string;
@@ -149,7 +171,7 @@ export interface Order {
 	user_id?: string | null;
 	email: string;
 	event_id: string;
-	organization_id: string;
+	org_id: string; // References auth-svc organization.id
 	subtotal: number;
 	fees: number;
 	tax: number;
@@ -185,7 +207,7 @@ export type SupportTicketCategory =
 
 export interface SupportTicket {
 	id: string;
-	organization_id?: string | null;
+	org_id?: string | null; // References auth-svc organization.id
 	user_id?: string | null;
 	subject: string;
 	description: string;
@@ -218,7 +240,7 @@ export interface CreateSupportTicketInput {
 	description: string;
 	priority?: SupportTicketPriority;
 	category: SupportTicketCategory;
-	organization_id?: string;
+	org_id?: string; // References auth-svc organization.id
 }
 
 export interface UpdateSupportTicketInput {
@@ -287,8 +309,8 @@ export interface SystemHealth {
 // ============================================================================
 
 export interface OrganizationsQueryParams {
-	status?: Organization["status"];
-	plan?: Organization["plan"];
+	status?: OrganizationSettings["status"];
+	plan?: OrganizationSettings["plan"];
 	search?: string;
 	page?: number;
 	limit?: number;
@@ -309,7 +331,7 @@ export interface SupportTicketsQueryParams {
 	priority?: SupportTicketPriority;
 	category?: SupportTicketCategory;
 	assignee_id?: string;
-	organization_id?: string;
+	org_id?: string; // References auth-svc organization.id
 	page?: number;
 	limit?: number;
 	[key: string]: string | number | boolean | undefined | null;

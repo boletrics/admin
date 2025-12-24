@@ -8,22 +8,37 @@ import {
 } from "../client";
 import type {
 	Organization,
+	OrganizationWithSettings,
 	OrganizationsQueryParams,
-	UpdateOrganizationInput,
+	OrganizationSettings,
+	UpdateOrganizationSettingsInput,
 	PaginatedResult,
 } from "../types";
 
 // ============================================================================
 // Organizations Hooks (Platform Admin)
+// Organization identity comes from auth-svc, settings from tickets-svc
 // ============================================================================
 
 /**
- * Fetch all organizations (platform-wide).
+ * Fetch all organizations (platform-wide) with their settings.
+ * In production, this calls auth-svc for org identity and merges with tickets-svc settings.
  */
 export function useOrganizations(params: OrganizationsQueryParams = {}) {
 	const queryString = buildQueryString(params);
-	return useApiQuery<PaginatedResult<Organization>>(
-		`/organizations${queryString}`,
+	// The admin API merges org identity from auth-svc with settings from tickets-svc
+	return useApiQuery<PaginatedResult<OrganizationWithSettings>>(
+		`/admin/organizations${queryString}`,
+	);
+}
+
+/**
+ * Fetch all organization settings from tickets-svc.
+ */
+export function useOrganizationSettings(params: OrganizationsQueryParams = {}) {
+	const queryString = buildQueryString(params);
+	return useApiQuery<PaginatedResult<OrganizationSettings>>(
+		`/org-settings${queryString}`,
 	);
 }
 
@@ -34,8 +49,8 @@ export function usePendingOrganizations(
 	params: Omit<OrganizationsQueryParams, "status"> = {},
 ) {
 	const queryString = buildQueryString({ ...params, status: "pending" });
-	return useApiQuery<PaginatedResult<Organization>>(
-		`/organizations${queryString}`,
+	return useApiQuery<PaginatedResult<OrganizationSettings>>(
+		`/org-settings${queryString}`,
 	);
 }
 
@@ -46,58 +61,67 @@ export function useSuspendedOrganizations(
 	params: Omit<OrganizationsQueryParams, "status"> = {},
 ) {
 	const queryString = buildQueryString({ ...params, status: "suspended" });
-	return useApiQuery<PaginatedResult<Organization>>(
-		`/organizations${queryString}`,
+	return useApiQuery<PaginatedResult<OrganizationSettings>>(
+		`/org-settings${queryString}`,
 	);
 }
 
 /**
- * Fetch a single organization by ID.
+ * Fetch a single organization by ID from auth-svc.
  */
-export function useOrganization(organizationId: string | null) {
+export function useOrganization(orgId: string | null) {
 	return useApiQuery<Organization>(
-		organizationId ? `/organizations/${organizationId}` : null,
+		orgId ? `/admin/organizations/${orgId}` : null,
+	);
+}
+
+/**
+ * Fetch settings for a single organization from tickets-svc.
+ */
+export function useOrgSettingsById(orgId: string | null) {
+	return useApiQuery<OrganizationSettings>(
+		orgId ? `/org-settings/${orgId}` : null,
 	);
 }
 
 // ============================================================================
-// Organization Mutations
+// Organization Settings Mutations (tickets-svc)
 // ============================================================================
 
 /**
- * Update an organization (status, plan, commission rate).
+ * Update organization settings (status, plan, commission rate).
  */
-export function useUpdateOrganization(organizationId: string) {
-	const mutation = useApiMutation<Organization, UpdateOrganizationInput>(
-		`/organizations/${organizationId}`,
-		"PUT",
-	);
+export function useUpdateOrgSettings(orgId: string) {
+	const mutation = useApiMutation<
+		OrganizationSettings,
+		UpdateOrganizationSettingsInput
+	>(`/org-settings/${orgId}`, "PUT");
 
-	const updateOrganization = async (data: UpdateOrganizationInput) => {
+	const updateSettings = async (data: UpdateOrganizationSettingsInput) => {
 		const result = await mutation.trigger(data);
-		revalidate(`/organizations/${organizationId}`);
-		revalidate(/\/organizations/);
+		revalidate(`/org-settings/${orgId}`);
+		revalidate(/\/org-settings/);
 		return result;
 	};
 
 	return {
 		...mutation,
-		updateOrganization,
+		updateSettings,
 	};
 }
 
 /**
  * Approve a pending organization.
  */
-export function useApproveOrganization(organizationId: string) {
-	const mutation = useApiMutation<Organization, { status: "active" }>(
-		`/organizations/${organizationId}`,
+export function useApproveOrganization(orgId: string) {
+	const mutation = useApiMutation<OrganizationSettings, { status: "active" }>(
+		`/org-settings/${orgId}`,
 		"PUT",
 	);
 
 	const approveOrganization = async () => {
 		const result = await mutation.trigger({ status: "active" });
-		revalidate(/\/organizations/);
+		revalidate(/\/org-settings/);
 		return result;
 	};
 
@@ -110,15 +134,15 @@ export function useApproveOrganization(organizationId: string) {
 /**
  * Suspend an organization.
  */
-export function useSuspendOrganization(organizationId: string) {
-	const mutation = useApiMutation<Organization, { status: "suspended" }>(
-		`/organizations/${organizationId}`,
-		"PUT",
-	);
+export function useSuspendOrganization(orgId: string) {
+	const mutation = useApiMutation<
+		OrganizationSettings,
+		{ status: "suspended" }
+	>(`/org-settings/${orgId}`, "PUT");
 
 	const suspendOrganization = async () => {
 		const result = await mutation.trigger({ status: "suspended" });
-		revalidate(/\/organizations/);
+		revalidate(/\/org-settings/);
 		return result;
 	};
 
@@ -131,15 +155,15 @@ export function useSuspendOrganization(organizationId: string) {
 /**
  * Reactivate a suspended organization.
  */
-export function useReactivateOrganization(organizationId: string) {
-	const mutation = useApiMutation<Organization, { status: "active" }>(
-		`/organizations/${organizationId}`,
+export function useReactivateOrganization(orgId: string) {
+	const mutation = useApiMutation<OrganizationSettings, { status: "active" }>(
+		`/org-settings/${orgId}`,
 		"PUT",
 	);
 
 	const reactivateOrganization = async () => {
 		const result = await mutation.trigger({ status: "active" });
-		revalidate(/\/organizations/);
+		revalidate(/\/org-settings/);
 		return result;
 	};
 

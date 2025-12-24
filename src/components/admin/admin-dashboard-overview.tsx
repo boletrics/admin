@@ -169,28 +169,33 @@ export function AdminDashboardOverview() {
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-4">
-						{orgsData?.data?.slice(0, 5).map((org) => (
-							<div
-								key={org.id}
-								className="flex items-center justify-between p-3 border rounded-lg"
-							>
-								<div>
-									<p className="font-medium">{org.name}</p>
-									<p className="text-sm text-muted-foreground">{org.email}</p>
-								</div>
-								<span
-									className={`px-2 py-1 rounded text-xs font-medium ${
-										org.status === "active"
-											? "bg-green-100 text-green-700"
-											: org.status === "pending"
-												? "bg-yellow-100 text-yellow-700"
-												: "bg-red-100 text-red-700"
-									}`}
+						{orgsData?.data?.slice(0, 5).map((org) => {
+							const status = org.settings?.status ?? "pending";
+							return (
+								<div
+									key={org.id}
+									className="flex items-center justify-between p-3 border rounded-lg"
 								>
-									{org.status}
-								</span>
-							</div>
-						)) ?? (
+									<div>
+										<p className="font-medium">{org.name}</p>
+										<p className="text-sm text-muted-foreground">
+											{org.settings?.email ?? org.slug}
+										</p>
+									</div>
+									<span
+										className={`px-2 py-1 rounded text-xs font-medium ${
+											status === "active"
+												? "bg-green-100 text-green-700"
+												: status === "pending"
+													? "bg-yellow-100 text-yellow-700"
+													: "bg-red-100 text-red-700"
+										}`}
+									>
+										{status}
+									</span>
+								</div>
+							);
+						}) ?? (
 							<p className="text-muted-foreground text-center py-4">
 								No organizations found
 							</p>

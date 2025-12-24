@@ -23,16 +23,19 @@ import {
 	useSuspendOrganization,
 	useReactivateOrganization,
 } from "@/lib/api/hooks";
-import type { Organization } from "@/lib/api/types";
+import type {
+	OrganizationWithSettings,
+	OrganizationSettings,
+} from "@/lib/api/types";
 
-const statusColors: Record<Organization["status"], string> = {
+const statusColors: Record<OrganizationSettings["status"], string> = {
 	active: "bg-green-100 text-green-700",
 	pending: "bg-yellow-100 text-yellow-700",
 	suspended: "bg-red-100 text-red-700",
 	inactive: "bg-gray-100 text-gray-700",
 };
 
-const planColors: Record<Organization["plan"], string> = {
+const planColors: Record<OrganizationSettings["plan"], string> = {
 	starter: "bg-gray-100 text-gray-700",
 	professional: "bg-blue-100 text-blue-700",
 	enterprise: "bg-purple-100 text-purple-700",
@@ -58,7 +61,7 @@ function formatCurrency(amount: number) {
 export function TenantsPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<
-		Organization["status"] | "all"
+		OrganizationSettings["status"] | "all"
 	>("all");
 
 	const {
@@ -74,15 +77,19 @@ export function TenantsPage() {
 	const filteredOrgs = organizations.filter(
 		(org) =>
 			org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			org.email.toLowerCase().includes(searchQuery.toLowerCase()),
+			(org.settings?.email ?? "")
+				.toLowerCase()
+				.includes(searchQuery.toLowerCase()),
 	);
 
 	// Stats
 	const stats = {
 		total: organizations.length,
-		active: organizations.filter((o) => o.status === "active").length,
-		pending: organizations.filter((o) => o.status === "pending").length,
-		suspended: organizations.filter((o) => o.status === "suspended").length,
+		active: organizations.filter((o) => o.settings?.status === "active").length,
+		pending: organizations.filter((o) => o.settings?.status === "pending")
+			.length,
+		suspended: organizations.filter((o) => o.settings?.status === "suspended")
+			.length,
 	};
 
 	if (isLoading) {
@@ -211,7 +218,7 @@ function OrganizationRow({
 	organization: org,
 	onRefresh,
 }: {
-	organization: Organization;
+	organization: OrganizationWithSettings;
 	onRefresh: () => void;
 }) {
 	const { suspendOrganization, isMutating: isSuspending } =
@@ -229,6 +236,10 @@ function OrganizationRow({
 		onRefresh();
 	};
 
+	const settings = org.settings;
+	const status = settings?.status ?? "pending";
+	const plan = settings?.plan ?? "starter";
+
 	return (
 		<div className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
 			<div className="flex items-center gap-4">
@@ -237,15 +248,17 @@ function OrganizationRow({
 				</div>
 				<div>
 					<p className="font-medium">{org.name}</p>
-					<p className="text-sm text-muted-foreground">{org.email}</p>
+					<p className="text-sm text-muted-foreground">
+						{settings?.email ?? org.slug}
+					</p>
 				</div>
 			</div>
 
 			<div className="flex items-center gap-4">
-				<Badge className={planColors[org.plan]}>{org.plan}</Badge>
-				<Badge className={statusColors[org.status]}>{org.status}</Badge>
+				<Badge className={planColors[plan]}>{plan}</Badge>
+				<Badge className={statusColors[status]}>{status}</Badge>
 				<span className="text-sm text-muted-foreground hidden md:inline">
-					{formatDate(org.created_at)}
+					{formatDate(org.createdAt)}
 				</span>
 
 				<DropdownMenu>
@@ -257,7 +270,7 @@ function OrganizationRow({
 					<DropdownMenuContent align="end">
 						<DropdownMenuItem>View Details</DropdownMenuItem>
 						<DropdownMenuItem>Contact</DropdownMenuItem>
-						{org.status === "active" && (
+						{status === "active" && (
 							<DropdownMenuItem
 								className="text-red-600"
 								onClick={handleSuspend}
@@ -266,7 +279,7 @@ function OrganizationRow({
 								{isSuspending ? "Suspending..." : "Suspend"}
 							</DropdownMenuItem>
 						)}
-						{org.status === "suspended" && (
+						{status === "suspended" && (
 							<DropdownMenuItem
 								className="text-green-600"
 								onClick={handleReactivate}
