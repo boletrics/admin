@@ -1,55 +1,62 @@
-import { describe, expect, it } from "vitest";
-import { DEFAULT_API_BASE_URL, getUpstreamApiBaseUrl } from "./config";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+	DEFAULT_TICKETS_SVC_URL,
+	DEFAULT_API_BASE_URL,
+	getTicketsSvcUrl,
+	getUpstreamApiBaseUrl,
+} from "./config";
 
-describe("api/config", () => {
-	it("prefers ALGTOOLS_API_BASE_URL over NEXT_PUBLIC_ALGTOOLS_API_BASE_URL", () => {
-		const prevAlg = process.env.ALGTOOLS_API_BASE_URL;
-		const prevPublic = process.env.NEXT_PUBLIC_ALGTOOLS_API_BASE_URL;
+describe("API Config", () => {
+	const originalEnv = process.env;
 
-		try {
-			process.env.ALGTOOLS_API_BASE_URL = "https://server.example";
-			process.env.NEXT_PUBLIC_ALGTOOLS_API_BASE_URL = "https://public.example";
-			expect(getUpstreamApiBaseUrl()).toBe("https://server.example");
-		} finally {
-			if (prevAlg === undefined) delete process.env.ALGTOOLS_API_BASE_URL;
-			else process.env.ALGTOOLS_API_BASE_URL = prevAlg;
-			if (prevPublic === undefined)
-				delete process.env.NEXT_PUBLIC_ALGTOOLS_API_BASE_URL;
-			else process.env.NEXT_PUBLIC_ALGTOOLS_API_BASE_URL = prevPublic;
-		}
+	beforeEach(() => {
+		vi.resetModules();
+		process.env = { ...originalEnv };
 	});
 
-	it("falls back to DEFAULT_API_BASE_URL when env vars are unset", () => {
-		const prevAlg = process.env.ALGTOOLS_API_BASE_URL;
-		const prevPublic = process.env.NEXT_PUBLIC_ALGTOOLS_API_BASE_URL;
-
-		try {
-			delete process.env.ALGTOOLS_API_BASE_URL;
-			delete process.env.NEXT_PUBLIC_ALGTOOLS_API_BASE_URL;
-			expect(getUpstreamApiBaseUrl()).toBe(DEFAULT_API_BASE_URL);
-		} finally {
-			if (prevAlg === undefined) delete process.env.ALGTOOLS_API_BASE_URL;
-			else process.env.ALGTOOLS_API_BASE_URL = prevAlg;
-			if (prevPublic === undefined)
-				delete process.env.NEXT_PUBLIC_ALGTOOLS_API_BASE_URL;
-			else process.env.NEXT_PUBLIC_ALGTOOLS_API_BASE_URL = prevPublic;
-		}
+	afterEach(() => {
+		process.env = originalEnv;
 	});
 
-	it("uses NEXT_PUBLIC_ALGTOOLS_API_BASE_URL when server env var is unset", () => {
-		const prevAlg = process.env.ALGTOOLS_API_BASE_URL;
-		const prevPublic = process.env.NEXT_PUBLIC_ALGTOOLS_API_BASE_URL;
+	describe("DEFAULT_TICKETS_SVC_URL", () => {
+		it("should be defined", () => {
+			expect(DEFAULT_TICKETS_SVC_URL).toBeDefined();
+			expect(typeof DEFAULT_TICKETS_SVC_URL).toBe("string");
+		});
+	});
 
-		try {
-			delete process.env.ALGTOOLS_API_BASE_URL;
-			process.env.NEXT_PUBLIC_ALGTOOLS_API_BASE_URL = "https://public.example";
-			expect(getUpstreamApiBaseUrl()).toBe("https://public.example");
-		} finally {
-			if (prevAlg === undefined) delete process.env.ALGTOOLS_API_BASE_URL;
-			else process.env.ALGTOOLS_API_BASE_URL = prevAlg;
-			if (prevPublic === undefined)
-				delete process.env.NEXT_PUBLIC_ALGTOOLS_API_BASE_URL;
-			else process.env.NEXT_PUBLIC_ALGTOOLS_API_BASE_URL = prevPublic;
-		}
+	describe("DEFAULT_API_BASE_URL", () => {
+		it("should be same as DEFAULT_TICKETS_SVC_URL", () => {
+			expect(DEFAULT_API_BASE_URL).toBe(DEFAULT_TICKETS_SVC_URL);
+		});
+	});
+
+	describe("getTicketsSvcUrl", () => {
+		it("should return default URL when no env vars set", () => {
+			delete process.env.TICKETS_SVC_URL;
+			delete process.env.NEXT_PUBLIC_TICKETS_SVC_URL;
+
+			expect(getTicketsSvcUrl()).toBe(DEFAULT_TICKETS_SVC_URL);
+		});
+
+		it("should prefer TICKETS_SVC_URL", () => {
+			process.env.TICKETS_SVC_URL = "https://custom-svc.example.com";
+			process.env.NEXT_PUBLIC_TICKETS_SVC_URL = "https://public.example.com";
+
+			expect(getTicketsSvcUrl()).toBe("https://custom-svc.example.com");
+		});
+
+		it("should fallback to NEXT_PUBLIC_TICKETS_SVC_URL", () => {
+			delete process.env.TICKETS_SVC_URL;
+			process.env.NEXT_PUBLIC_TICKETS_SVC_URL = "https://public.example.com";
+
+			expect(getTicketsSvcUrl()).toBe("https://public.example.com");
+		});
+	});
+
+	describe("getUpstreamApiBaseUrl", () => {
+		it("should return same as getTicketsSvcUrl", () => {
+			expect(getUpstreamApiBaseUrl()).toBe(getTicketsSvcUrl());
+		});
 	});
 });
