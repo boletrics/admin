@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/boletrics/admin/compare/v1.4.1...v1.5.0) (2025-12-25)
+
+
+### Features
+
+* **api:** implement new admin API endpoints and integrate SWR for data fetching ([18387b1](https://github.com/boletrics/admin/commit/18387b19bdc8184b6dcb437ecd6ce5eec7aad3de))
+
 ## [1.4.1](https://github.com/boletrics/admin/compare/v1.4.0...v1.4.1) (2025-12-23)
 
 
