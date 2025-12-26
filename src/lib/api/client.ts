@@ -76,6 +76,12 @@ export async function apiFetch<T>(
 	} else if (endpoint.startsWith("/api/auth/")) {
 		// Auth service endpoints
 		url = `${getAuthServiceUrl()}${endpoint}`;
+	} else if (endpoint.startsWith("/api/admin/")) {
+		// Already-prefixed admin endpoints (from swrFetcher) - use as relative URL
+		url = endpoint;
+	} else if (endpoint.startsWith("/admin/")) {
+		// Admin endpoints go through local Next.js API routes for server-side merging
+		url = `/api${endpoint}`;
 	} else {
 		// Tickets service endpoints
 		url = `${getTicketsSvcUrl()}${endpoint}`;
@@ -162,6 +168,9 @@ export function useApiQuery<T>(
 			url = endpoint;
 		} else if (endpoint.startsWith("/api/auth/")) {
 			url = `${getAuthServiceUrl()}${endpoint}`;
+		} else if (endpoint.startsWith("/admin/")) {
+			// Admin endpoints go through local Next.js API routes
+			url = `/api${endpoint}`;
 		} else {
 			url = `${getTicketsSvcUrl()}${endpoint}`;
 		}
@@ -185,6 +194,9 @@ export function useApiMutation<TData, TArg = unknown>(
 		url = endpoint;
 	} else if (endpoint.startsWith("/api/auth/")) {
 		url = `${getAuthServiceUrl()}${endpoint}`;
+	} else if (endpoint.startsWith("/admin/")) {
+		// Admin endpoints go through local Next.js API routes
+		url = `/api${endpoint}`;
 	} else {
 		url = `${getTicketsSvcUrl()}${endpoint}`;
 	}
@@ -211,6 +223,8 @@ export function revalidate(key: string | RegExp) {
 			url = key;
 		} else if (key.startsWith("/api/auth/")) {
 			url = `${getAuthServiceUrl()}${key}`;
+		} else if (key.startsWith("/admin/")) {
+			url = `/api${key}`;
 		} else {
 			url = `${getTicketsSvcUrl()}${key}`;
 		}
@@ -230,6 +244,8 @@ export async function optimisticUpdate<T>(
 		url = key;
 	} else if (key.startsWith("/api/auth/")) {
 		url = `${getAuthServiceUrl()}${key}`;
+	} else if (key.startsWith("/admin/")) {
+		url = `/api${key}`;
 	} else {
 		url = `${getTicketsSvcUrl()}${key}`;
 	}
