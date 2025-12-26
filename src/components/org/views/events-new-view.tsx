@@ -168,6 +168,28 @@ export function EventsNewView() {
 				}
 			}
 
+			// Create ticket types
+			const validTickets = ticketTypes.filter(
+				(t) => t.name && t.price > 0 && t.quantity > 0,
+			);
+			for (const ticket of validTickets) {
+				try {
+					await apiFetch("/ticket-types", {
+						method: "POST",
+						body: JSON.stringify({
+							event_id: event.id,
+							name: ticket.name,
+							description: ticket.description || null,
+							price: ticket.price,
+							quantity_total: ticket.quantity,
+						}),
+						headers: { "Content-Type": "application/json" },
+					});
+				} catch (err) {
+					console.error("Error creating ticket type:", err);
+				}
+			}
+
 			toast.success(
 				publish ? "Evento publicado exitosamente" : "Borrador guardado",
 			);
