@@ -44,6 +44,8 @@ export default defineConfig({
 				"src/lib/i18n.ts",
 				"src/lib/utils.ts",
 				"src/lib/slugify.ts",
+				// Client-side image utilities (uses DOM APIs, requires browser environment)
+				"src/lib/image-blur.ts",
 				// Auth adapter - index and types are just exports/type definitions
 				"src/lib/auth/index.ts",
 				"src/lib/auth/types.ts",

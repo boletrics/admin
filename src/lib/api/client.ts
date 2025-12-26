@@ -38,6 +38,7 @@ export class ApiError extends Error {
 
 export type FetcherOptions = RequestInit & {
 	jwt?: string | null;
+	body?: RequestInit["body"] | Record<string, unknown>; // Allow object bodies
 };
 
 /**

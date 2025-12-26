@@ -127,6 +127,41 @@ export interface UpdateUserInput {
 }
 
 // ============================================================================
+// Venue Types
+// ============================================================================
+
+export interface Venue {
+	id: string;
+	name: string;
+	address: string;
+	city: string;
+	state: string;
+	postal_code?: string | null;
+	country: string;
+	region: "mexico-city" | "monterrey" | "guadalajara" | "cancun";
+	capacity?: number | null;
+	latitude?: number | null;
+	longitude?: number | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface CreateVenueInput {
+	name: string;
+	address: string;
+	city: string;
+	state: string;
+	postal_code?: string;
+	country: string;
+	region: Venue["region"];
+	capacity?: number;
+	latitude?: number;
+	longitude?: number;
+}
+
+export interface UpdateVenueInput extends Partial<CreateVenueInput> {}
+
+// ============================================================================
 // Event Types
 // ============================================================================
 
@@ -141,6 +176,32 @@ export type EventCategory =
 
 export type EventStatus = "draft" | "published" | "cancelled" | "completed";
 
+export interface EventDate {
+	id: string;
+	event_id: string;
+	date: string;
+	start_time: string;
+	end_time?: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface TicketType {
+	id: string;
+	event_id: string;
+	name: string;
+	description?: string | null;
+	price: number;
+	quantity_total: number;
+	quantity_sold: number;
+	quantity_available: number;
+	sales_start_at?: string | null;
+	sales_end_at?: string | null;
+	status: "active" | "sold_out" | "cancelled";
+	created_at: string;
+	updated_at: string;
+}
+
 export interface Event {
 	id: string;
 	org_id: string; // References auth-svc organization.id
@@ -151,13 +212,58 @@ export interface Event {
 	category: EventCategory;
 	artist?: string | null;
 	image_url?: string | null;
+	image_blur?: string | null; // Base64 blur placeholder for Next.js blurDataURL
 	status: EventStatus;
 	published_at?: string | null;
 	created_at: string;
 	updated_at: string;
-	// Relations
+	// Relations (optional, included with ?include=)
+	venue?: Venue;
+	dates?: EventDate[];
+	ticket_types?: TicketType[];
 	organization?: Organization;
 }
+
+export interface CreateEventInput {
+	org_id: string; // References auth-svc organization.id
+	venue_id: string;
+	title: string;
+	slug: string;
+	description?: string;
+	category: EventCategory;
+	artist?: string;
+	image_url?: string;
+	image_blur?: string; // Base64 blur placeholder for Next.js blurDataURL
+	status?: EventStatus;
+	published_at?: string;
+}
+
+export interface UpdateEventInput extends Partial<CreateEventInput> {}
+
+export interface CreateEventDateInput {
+	event_id: string;
+	date: string;
+	start_time: string;
+	end_time?: string;
+}
+
+export interface UpdateEventDateInput extends Partial<
+	Omit<CreateEventDateInput, "event_id">
+> {}
+
+export interface CreateTicketTypeInput {
+	event_id: string;
+	name: string;
+	description?: string;
+	price: number;
+	quantity_total: number;
+	sales_start_at?: string;
+	sales_end_at?: string;
+}
+
+export interface UpdateTicketTypeInput extends Partial<
+	Omit<CreateTicketTypeInput, "event_id">
+> {}
 
 // ============================================================================
 // Order Types
@@ -341,5 +447,26 @@ export interface AnalyticsQueryParams {
 	start_date?: string;
 	end_date?: string;
 	granularity?: "day" | "week" | "month";
+	[key: string]: string | number | boolean | undefined | null;
+}
+
+export interface EventsQueryParams {
+	org_id?: string;
+	status?: EventStatus;
+	category?: EventCategory;
+	region?: string;
+	search?: string;
+	page?: number;
+	limit?: number;
+	include?: string;
+	[key: string]: string | number | boolean | undefined | null;
+}
+
+export interface VenuesQueryParams {
+	region?: string;
+	city?: string;
+	search?: string;
+	page?: number;
+	limit?: number;
 	[key: string]: string | number | boolean | undefined | null;
 }

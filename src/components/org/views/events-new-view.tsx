@@ -1,0 +1,808 @@
+"use client";
+
+import { useState } from "react";
+import {
+	ArrowLeft,
+	Calendar,
+	MapPin,
+	Ticket,
+	ImageIcon,
+	Save,
+	Eye,
+	Plus,
+	Trash2,
+	Loader2,
+	Building2,
+} from "lucide-react";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCreateEvent } from "@/lib/api/hooks/use-events";
+import { apiFetch } from "@/lib/api/client";
+import { useVenues, useCreateVenue } from "@/lib/api/hooks/use-venues";
+import { useOrganizations } from "@/lib/api/hooks/use-organizations";
+import type { EventCategory, CreateEventInput } from "@/lib/api/types";
+import { toast } from "sonner";
+import { ImageUpload } from "@/components/ui/image-upload";
+
+interface EventDateForm {
+	id: string;
+	date: string;
+	start_time: string;
+	end_time: string;
+}
+
+interface TicketTypeForm {
+	id: string;
+	name: string;
+	price: number;
+	quantity: number;
+	description: string;
+}
+
+export function EventsNewView() {
+	const router = useRouter();
+	const { createEvent, isMutating } = useCreateEvent();
+	const { data: venues = [] } = useVenues();
+	const { createVenue } = useCreateVenue();
+
+	// Fetch organizations for admin to select
+	const { data: organizationsData } = useOrganizations();
+	const organizations = organizationsData?.data ?? [];
+
+	// Form state - includes org_id for admin
+	const [formData, setFormData] = useState({
+		org_id: "", // Admin must select an organization
+		title: "",
+		category: "" as EventCategory | "",
+		description: "",
+		artist: "",
+		image_url: "",
+		image_blur: "", // Base64 blur placeholder for Next.js Image
+		venue_id: "",
+		isPublic: true,
+		allowSales: true,
+	});
+
+	// Event dates (1:n relationship)
+	const [eventDates, setEventDates] = useState<EventDateForm[]>([
+		{ id: "1", date: "", start_time: "", end_time: "" },
+	]);
+
+	// New venue form (for when venue doesn't exist)
+	const [showNewVenue, setShowNewVenue] = useState(false);
+	const [newVenue, setNewVenue] = useState({
+		name: "",
+		address: "",
+		city: "",
+		state: "",
+		region: "mexico-city" as const,
+		capacity: 0,
+	});
+
+	// Ticket types (to be created after event)
+	const [ticketTypes, setTicketTypes] = useState<TicketTypeForm[]>([
+		{ id: "1", name: "General", price: 500, quantity: 100, description: "" },
+	]);
+
+	const handleSave = async (publish = false) => {
+		if (!formData.org_id) {
+			toast.error("Por favor selecciona una organización");
+			return;
+		}
+
+		if (!formData.title || !formData.category || !formData.venue_id) {
+			toast.error("Por favor completa los campos obligatorios");
+			return;
+		}
+
+		// Validate at least one date is provided
+		const validDates = eventDates.filter((d) => d.date && d.start_time);
+		if (validDates.length === 0) {
+			toast.error("Por favor agrega al menos una fecha para el evento");
+			return;
+		}
+
+		try {
+			// Generate slug from title
+			const slug = formData.title
+				.toLowerCase()
+				.normalize("NFD")
+				.replace(/[\u0300-\u036f]/g, "") // Remove accents
+				.replace(/[^a-z0-9\s-]/g, "") // Remove special chars
+				.replace(/\s+/g, "-") // Replace spaces with dashes
+				.replace(/-+/g, "-") // Replace multiple dashes with single
+				.replace(/^-|-$/g, ""); // Remove leading/trailing dashes
+
+			// Create the event
+			const eventInput: CreateEventInput = {
+				org_id: formData.org_id,
+				venue_id: formData.venue_id,
+				title: formData.title,
+				slug,
+				category: formData.category as EventCategory,
+				description: formData.description || undefined,
+				artist: formData.artist || undefined,
+				image_url: formData.image_url || undefined,
+				image_blur: formData.image_blur || undefined,
+				status: publish ? "published" : "draft",
+				published_at: publish ? new Date().toISOString() : undefined,
+			};
+
+			const event = await createEvent(eventInput);
+
+			// Create event dates
+			for (const eventDate of validDates) {
+				try {
+					await apiFetch("/event-dates", {
+						method: "POST",
+						body: JSON.stringify({
+							event_id: event.id,
+							date: eventDate.date,
+							start_time: eventDate.start_time,
+							end_time: eventDate.end_time || null,
+						}),
+						headers: { "Content-Type": "application/json" },
+					});
+				} catch (err) {
+					console.error("Error creating event date:", err);
+				}
+			}
+
+			toast.success(
+				publish ? "Evento publicado exitosamente" : "Borrador guardado",
+			);
+			router.push(`/org/events/${event.id}`);
+		} catch (error) {
+			toast.error("Error al crear el evento");
+			console.error(error);
+		}
+	};
+
+	const handleCreateVenue = async () => {
+		if (
+			!newVenue.name ||
+			!newVenue.address ||
+			!newVenue.city ||
+			!newVenue.state
+		) {
+			toast.error("Por favor completa los campos del lugar");
+			return;
+		}
+
+		try {
+			const venue = await createVenue({
+				name: newVenue.name,
+				address: newVenue.address,
+				city: newVenue.city,
+				state: newVenue.state,
+				country: "México",
+				region: newVenue.region,
+				capacity: newVenue.capacity || undefined,
+			});
+
+			setFormData({ ...formData, venue_id: venue.id });
+			setShowNewVenue(false);
+			toast.success("Lugar creado exitosamente");
+		} catch {
+			toast.error("Error al crear el lugar");
+		}
+	};
+
+	const addTicketType = () => {
+		setTicketTypes([
+			...ticketTypes,
+			{
+				id: Date.now().toString(),
+				name: "",
+				price: 0,
+				quantity: 0,
+				description: "",
+			},
+		]);
+	};
+
+	const removeTicketType = (id: string) => {
+		if (ticketTypes.length > 1) {
+			setTicketTypes(ticketTypes.filter((t) => t.id !== id));
+		}
+	};
+
+	const updateTicketType = (
+		id: string,
+		field: keyof TicketTypeForm,
+		value: string | number,
+	) => {
+		setTicketTypes(
+			ticketTypes.map((t) => (t.id === id ? { ...t, [field]: value } : t)),
+		);
+	};
+
+	// Event date management
+	const addEventDate = () => {
+		setEventDates([
+			...eventDates,
+			{
+				id: Date.now().toString(),
+				date: "",
+				start_time: "",
+				end_time: "",
+			},
+		]);
+	};
+
+	const removeEventDate = (id: string) => {
+		if (eventDates.length > 1) {
+			setEventDates(eventDates.filter((d) => d.id !== id));
+		}
+	};
+
+	const updateEventDate = (
+		id: string,
+		field: keyof EventDateForm,
+		value: string,
+	) => {
+		setEventDates(
+			eventDates.map((d) => (d.id === id ? { ...d, [field]: value } : d)),
+		);
+	};
+
+	return (
+		<div className="p-6 space-y-6">
+			<div className="flex items-center gap-4">
+				<Button variant="ghost" size="icon" asChild>
+					<Link href="/org/events">
+						<ArrowLeft className="h-5 w-5" />
+					</Link>
+				</Button>
+				<div className="flex-1">
+					<h1 className="text-2xl font-bold tracking-tight">
+						Crear nuevo evento
+					</h1>
+					<p className="text-muted-foreground">
+						Configura los detalles del evento
+					</p>
+				</div>
+				<div className="flex gap-2">
+					<Button
+						variant="outline"
+						onClick={() => handleSave(false)}
+						disabled={isMutating}
+					>
+						{isMutating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+						Guardar borrador
+					</Button>
+					<Button
+						onClick={() => handleSave(true)}
+						disabled={isMutating}
+						className="gap-2"
+					>
+						{isMutating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+						<Save className="h-4 w-4" />
+						Publicar evento
+					</Button>
+				</div>
+			</div>
+
+			<div className="grid gap-6 lg:grid-cols-3">
+				<div className="lg:col-span-2 space-y-6">
+					{/* Organization Selector (Admin only) */}
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<Building2 className="h-5 w-5" />
+								Organización
+							</CardTitle>
+							<CardDescription>
+								Selecciona la organización para este evento
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<div className="space-y-2">
+								<Label htmlFor="org">Organización *</Label>
+								<Select
+									value={formData.org_id}
+									onValueChange={(value) =>
+										setFormData({ ...formData, org_id: value })
+									}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Seleccionar organización" />
+									</SelectTrigger>
+									<SelectContent>
+										{organizations.map((org) => (
+											<SelectItem key={org.id} value={org.id}>
+												{org.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<Calendar className="h-5 w-5" />
+								Información básica
+							</CardTitle>
+							<CardDescription>Detalles principales del evento</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<div className="space-y-2">
+								<Label htmlFor="name">Nombre del evento *</Label>
+								<Input
+									id="name"
+									placeholder="Festival de Música 2025"
+									value={formData.title}
+									onChange={(e) =>
+										setFormData({ ...formData, title: e.target.value })
+									}
+								/>
+							</div>
+
+							<div className="grid gap-4 sm:grid-cols-2">
+								<div className="space-y-2">
+									<Label htmlFor="category">Categoría *</Label>
+									<Select
+										value={formData.category}
+										onValueChange={(value) =>
+											setFormData({
+												...formData,
+												category: value as EventCategory,
+											})
+										}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Seleccionar" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="concert">Concierto</SelectItem>
+											<SelectItem value="festival">Festival</SelectItem>
+											<SelectItem value="theater">Teatro</SelectItem>
+											<SelectItem value="sports">Deportes</SelectItem>
+											<SelectItem value="comedy">Comedia</SelectItem>
+											<SelectItem value="conference">Conferencia</SelectItem>
+											<SelectItem value="exhibition">Exposición</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="artist">Artista / Presentador</Label>
+									<Input
+										id="artist"
+										placeholder="Nombre del artista"
+										value={formData.artist}
+										onChange={(e) =>
+											setFormData({ ...formData, artist: e.target.value })
+										}
+									/>
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="description">Descripción</Label>
+								<Textarea
+									id="description"
+									rows={4}
+									placeholder="Describe tu evento..."
+									value={formData.description}
+									onChange={(e) =>
+										setFormData({ ...formData, description: e.target.value })
+									}
+								/>
+							</div>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<MapPin className="h-5 w-5" />
+								Ubicación y fecha
+							</CardTitle>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<div className="space-y-2">
+								<Label htmlFor="venue">Lugar *</Label>
+								<div className="flex gap-2">
+									<Select
+										value={formData.venue_id}
+										onValueChange={(value) =>
+											setFormData({ ...formData, venue_id: value })
+										}
+									>
+										<SelectTrigger className="flex-1">
+											<SelectValue placeholder="Seleccionar lugar" />
+										</SelectTrigger>
+										<SelectContent>
+											{venues.map((venue) => (
+												<SelectItem key={venue.id} value={venue.id}>
+													{venue.name} - {venue.city}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<Button
+										variant="outline"
+										type="button"
+										onClick={() => setShowNewVenue(!showNewVenue)}
+									>
+										<Plus className="h-4 w-4 mr-1" />
+										Nuevo
+									</Button>
+								</div>
+							</div>
+
+							{showNewVenue && (
+								<div className="p-4 border rounded-lg space-y-4 bg-muted/50">
+									<p className="font-medium text-sm">Crear nuevo lugar</p>
+									<div className="space-y-2">
+										<Label>Nombre del lugar</Label>
+										<Input
+											placeholder="Foro Sol"
+											value={newVenue.name}
+											onChange={(e) =>
+												setNewVenue({ ...newVenue, name: e.target.value })
+											}
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label>Dirección</Label>
+										<Input
+											placeholder="Av. Río Churubusco s/n"
+											value={newVenue.address}
+											onChange={(e) =>
+												setNewVenue({ ...newVenue, address: e.target.value })
+											}
+										/>
+									</div>
+									<div className="grid gap-4 sm:grid-cols-2">
+										<div className="space-y-2">
+											<Label>Ciudad</Label>
+											<Input
+												placeholder="Ciudad de México"
+												value={newVenue.city}
+												onChange={(e) =>
+													setNewVenue({ ...newVenue, city: e.target.value })
+												}
+											/>
+										</div>
+										<div className="space-y-2">
+											<Label>Estado</Label>
+											<Input
+												placeholder="CDMX"
+												value={newVenue.state}
+												onChange={(e) =>
+													setNewVenue({ ...newVenue, state: e.target.value })
+												}
+											/>
+										</div>
+									</div>
+									<div className="grid gap-4 sm:grid-cols-2">
+										<div className="space-y-2">
+											<Label>Región</Label>
+											<Select
+												value={newVenue.region}
+												onValueChange={(value: typeof newVenue.region) =>
+													setNewVenue({ ...newVenue, region: value })
+												}
+											>
+												<SelectTrigger>
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="mexico-city">
+														Ciudad de México
+													</SelectItem>
+													<SelectItem value="monterrey">Monterrey</SelectItem>
+													<SelectItem value="guadalajara">
+														Guadalajara
+													</SelectItem>
+													<SelectItem value="cancun">Cancún</SelectItem>
+												</SelectContent>
+											</Select>
+										</div>
+										<div className="space-y-2">
+											<Label>Capacidad</Label>
+											<Input
+												type="number"
+												placeholder="5000"
+												value={newVenue.capacity || ""}
+												onChange={(e) =>
+													setNewVenue({
+														...newVenue,
+														capacity: parseInt(e.target.value) || 0,
+													})
+												}
+											/>
+										</div>
+									</div>
+									<Button type="button" onClick={handleCreateVenue}>
+										Crear lugar
+									</Button>
+								</div>
+							)}
+
+							<Separator />
+
+							<div className="space-y-4">
+								<div className="flex items-center justify-between">
+									<Label>Fechas del evento *</Label>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={addEventDate}
+									>
+										<Plus className="h-4 w-4 mr-1" />
+										Agregar fecha
+									</Button>
+								</div>
+
+								{eventDates.map((eventDate, index) => (
+									<div
+										key={eventDate.id}
+										className="p-4 border rounded-lg space-y-4 bg-muted/30"
+									>
+										<div className="flex items-center justify-between">
+											<p className="font-medium text-sm">Fecha {index + 1}</p>
+											{eventDates.length > 1 && (
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() => removeEventDate(eventDate.id)}
+												>
+													<Trash2 className="h-4 w-4 text-destructive" />
+												</Button>
+											)}
+										</div>
+										<div className="grid gap-4 sm:grid-cols-3">
+											<div className="space-y-2">
+												<Label>Fecha *</Label>
+												<Input
+													type="date"
+													value={eventDate.date}
+													onChange={(e) =>
+														updateEventDate(
+															eventDate.id,
+															"date",
+															e.target.value,
+														)
+													}
+												/>
+											</div>
+											<div className="space-y-2">
+												<Label>Hora de inicio *</Label>
+												<Input
+													type="time"
+													value={eventDate.start_time}
+													onChange={(e) =>
+														updateEventDate(
+															eventDate.id,
+															"start_time",
+															e.target.value,
+														)
+													}
+												/>
+											</div>
+											<div className="space-y-2">
+												<Label>Hora de fin</Label>
+												<Input
+													type="time"
+													value={eventDate.end_time}
+													onChange={(e) =>
+														updateEventDate(
+															eventDate.id,
+															"end_time",
+															e.target.value,
+														)
+													}
+												/>
+											</div>
+										</div>
+									</div>
+								))}
+							</div>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<Ticket className="h-5 w-5" />
+								Tipos de boletos
+							</CardTitle>
+							<CardDescription>
+								Define los tipos de boletos y precios (se crearán después de
+								guardar el evento)
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							{ticketTypes.map((ticket, index) => (
+								<div
+									key={ticket.id}
+									className="p-4 border rounded-lg space-y-4"
+								>
+									<div className="flex items-center justify-between">
+										<p className="font-medium text-sm">
+											Tipo de boleto {index + 1}
+										</p>
+										{ticketTypes.length > 1 && (
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() => removeTicketType(ticket.id)}
+											>
+												<Trash2 className="h-4 w-4 text-destructive" />
+											</Button>
+										)}
+									</div>
+									<div className="grid gap-4 sm:grid-cols-3">
+										<div className="space-y-2">
+											<Label>Nombre</Label>
+											<Input
+												placeholder="VIP, General, etc."
+												value={ticket.name}
+												onChange={(e) =>
+													updateTicketType(ticket.id, "name", e.target.value)
+												}
+											/>
+										</div>
+										<div className="space-y-2">
+											<Label>Precio (MXN)</Label>
+											<Input
+												type="number"
+												placeholder="500"
+												value={ticket.price || ""}
+												onChange={(e) =>
+													updateTicketType(
+														ticket.id,
+														"price",
+														parseInt(e.target.value) || 0,
+													)
+												}
+											/>
+										</div>
+										<div className="space-y-2">
+											<Label>Cantidad</Label>
+											<Input
+												type="number"
+												placeholder="100"
+												value={ticket.quantity || ""}
+												onChange={(e) =>
+													updateTicketType(
+														ticket.id,
+														"quantity",
+														parseInt(e.target.value) || 0,
+													)
+												}
+											/>
+										</div>
+									</div>
+								</div>
+							))}
+							<Button
+								variant="outline"
+								type="button"
+								onClick={addTicketType}
+								className="w-full"
+							>
+								<Plus className="h-4 w-4 mr-2" />
+								Agregar tipo de boleto
+							</Button>
+						</CardContent>
+					</Card>
+				</div>
+
+				<div className="space-y-6">
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<ImageIcon className="h-5 w-5" />
+								Imagen del evento
+							</CardTitle>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<ImageUpload
+								value={formData.image_url}
+								onChange={(value) =>
+									setFormData({
+										...formData,
+										image_url: value?.url ?? "",
+										image_blur: value?.blur ?? "",
+									})
+								}
+								context="event"
+								placeholder="Arrastra una imagen o haz clic para seleccionar (1920x1080px)"
+								aspectRatio="16/9"
+							/>
+							<div className="space-y-2">
+								<Label htmlFor="image_url">O ingresa una URL manualmente</Label>
+								<Input
+									id="image_url"
+									placeholder="https://..."
+									value={formData.image_url}
+									onChange={(e) =>
+										setFormData({ ...formData, image_url: e.target.value })
+									}
+								/>
+							</div>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader>
+							<CardTitle>Configuración</CardTitle>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<div className="flex items-center justify-between">
+								<div className="space-y-0.5">
+									<Label>Evento público</Label>
+									<p className="text-sm text-muted-foreground">
+										Visible en el catálogo
+									</p>
+								</div>
+								<Switch
+									checked={formData.isPublic}
+									onCheckedChange={(checked) =>
+										setFormData({ ...formData, isPublic: checked })
+									}
+								/>
+							</div>
+
+							<Separator />
+
+							<div className="flex items-center justify-between">
+								<div className="space-y-0.5">
+									<Label>Venta de boletos</Label>
+									<p className="text-sm text-muted-foreground">
+										Permitir compras
+									</p>
+								</div>
+								<Switch
+									checked={formData.allowSales}
+									onCheckedChange={(checked) =>
+										setFormData({ ...formData, allowSales: checked })
+									}
+								/>
+							</div>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader>
+							<CardTitle>Vista previa</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<Button variant="outline" className="w-full gap-2 bg-transparent">
+								<Eye className="h-4 w-4" />
+								Ver como cliente
+							</Button>
+						</CardContent>
+					</Card>
+				</div>
+			</div>
+		</div>
+	);
+}
