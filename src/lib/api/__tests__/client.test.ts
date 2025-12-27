@@ -266,6 +266,40 @@ describe("Admin API Client", () => {
 			);
 		});
 
+		it("should route admin endpoints to local Next.js API", async () => {
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				headers: {
+					get: () => "application/json",
+				},
+				json: async () => ({ data: [] }),
+			});
+
+			await apiFetch("/admin/organizations");
+
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/admin/organizations",
+				expect.any(Object),
+			);
+		});
+
+		it("should keep already-prefixed /api/admin/ endpoints as relative URLs", async () => {
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				headers: {
+					get: () => "application/json",
+				},
+				json: async () => ({ data: [] }),
+			});
+
+			await apiFetch("/api/admin/organizations");
+
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/admin/organizations",
+				expect.any(Object),
+			);
+		});
+
 		it("should use full URL when endpoint is absolute", async () => {
 			mockFetch.mockResolvedValueOnce({
 				ok: true,
@@ -304,6 +338,48 @@ describe("Admin API Client", () => {
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({ name: "Test" }),
+				}),
+			);
+		});
+
+		it("should route nested admin endpoints to local Next.js API", async () => {
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				headers: {
+					get: () => "application/json",
+				},
+				json: async () => ({ data: {} }),
+			});
+
+			await apiFetch("/admin/organizations/123");
+
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/admin/organizations/123",
+				expect.any(Object),
+			);
+		});
+
+		it("should not stringify FormData body", async () => {
+			const formData = new FormData();
+			formData.append("file", "test");
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				headers: {
+					get: () => "application/json",
+				},
+				json: async () => ({ uploaded: true }),
+			});
+
+			await apiFetch("/upload", {
+				method: "POST",
+				body: formData,
+			});
+
+			expect(mockFetch).toHaveBeenCalledWith(
+				expect.any(String),
+				expect.objectContaining({
+					body: formData,
 				}),
 			);
 		});

@@ -12,6 +12,7 @@ import {
 	UserCheck,
 	UserX,
 	ShieldCheck,
+	Loader2,
 } from "lucide-react";
 import {
 	Card,
@@ -22,7 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	Table,
 	TableBody,
@@ -45,7 +46,13 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { mockPlatformUsers } from "@/lib/admin-mock-data";
+import {
+	useUsers,
+	useBanUser,
+	useUnbanUser,
+	useSetUserRole,
+} from "@/lib/api/hooks";
+import type { User } from "@/lib/api/types";
 
 function formatDate(timestamp: string) {
 	return new Date(timestamp).toLocaleDateString("en-US", {
@@ -69,38 +76,32 @@ function getRelativeTime(timestamp: string) {
 	return formatDate(timestamp);
 }
 
-const statusConfig = {
+// User status based on banned field from Better Auth
+function getUserStatus(user: User): "active" | "banned" {
+	return user.banned ? "banned" : "active";
+}
+
+const statusConfig: Record<string, { label: string; color: string }> = {
 	active: {
 		label: "Active",
 		color:
 			"bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
 	},
-	inactive: {
-		label: "Inactive",
-		color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-	},
-	suspended: {
-		label: "Suspended",
+	banned: {
+		label: "Banned",
 		color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 	},
 };
 
-const roleConfig = {
-	owner: {
-		label: "Owner",
+// Role config based on Better Auth role field
+const roleConfig: Record<string, { label: string; color: string }> = {
+	admin: {
+		label: "Admin",
 		color:
 			"bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
 	},
-	admin: {
-		label: "Admin",
-		color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-	},
-	manager: {
-		label: "Manager",
-		color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
-	},
-	staff: {
-		label: "Staff",
+	user: {
+		label: "User",
 		color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 	},
 };
@@ -109,37 +110,62 @@ export function UsersPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("all");
 	const [roleFilter, setRoleFilter] = useState<string>("all");
-	const [tenantFilter, setTenantFilter] = useState<string>("all");
 
-	const uniqueTenants = useMemo(() => {
-		const tenants = new Set(mockPlatformUsers.map((u) => u.tenantName));
-		return Array.from(tenants);
-	}, []);
+	// Fetch users from auth-svc
+	const {
+		data: usersData,
+		isLoading,
+		error,
+		mutate,
+	} = useUsers({
+		search: searchQuery || undefined,
+		role: roleFilter !== "all" ? roleFilter : undefined,
+		banned:
+			statusFilter === "banned"
+				? true
+				: statusFilter === "active"
+					? false
+					: undefined,
+	});
+
+	const users = usersData?.data ?? [];
 
 	const filteredUsers = useMemo(() => {
-		return mockPlatformUsers.filter((user) => {
-			const matchesSearch =
-				searchQuery === "" ||
-				user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				user.email.toLowerCase().includes(searchQuery.toLowerCase());
-			const matchesStatus =
-				statusFilter === "all" || user.status === statusFilter;
-			const matchesRole = roleFilter === "all" || user.role === roleFilter;
-			const matchesTenant =
-				tenantFilter === "all" || user.tenantName === tenantFilter;
-			return matchesSearch && matchesStatus && matchesRole && matchesTenant;
-		});
-	}, [searchQuery, statusFilter, roleFilter, tenantFilter]);
+		// Additional client-side filtering if needed
+		return users;
+	}, [users]);
 
 	const stats = useMemo(() => {
 		return {
-			total: mockPlatformUsers.length,
-			active: mockPlatformUsers.filter((u) => u.status === "active").length,
-			mfaEnabled: mockPlatformUsers.filter((u) => u.mfaEnabled).length,
-			suspended: mockPlatformUsers.filter((u) => u.status === "suspended")
-				.length,
+			total: usersData?.pagination?.total ?? users.length,
+			active: users.filter((u) => !u.banned).length,
+			verified: users.filter((u) => u.emailVerified).length,
+			banned: users.filter((u) => u.banned).length,
 		};
-	}, []);
+	}, [users, usersData]);
+
+	if (isLoading) {
+		return (
+			<div className="flex items-center justify-center h-96">
+				<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="p-6">
+				<Card className="p-6">
+					<p className="text-destructive">
+						Failed to load users: {error.message}
+					</p>
+					<Button onClick={() => mutate()} className="mt-4">
+						Retry
+					</Button>
+				</Card>
+			</div>
+		);
+	}
 
 	return (
 		<div className="p-6 space-y-6">
@@ -180,10 +206,10 @@ export function UsersPage() {
 					<CardHeader className="pb-2">
 						<CardDescription className="flex items-center gap-1">
 							<ShieldCheck className="h-3.5 w-3.5" />
-							MFA Enabled
+							Verified
 						</CardDescription>
 						<CardTitle className="text-2xl text-blue-600">
-							{stats.mfaEnabled}
+							{stats.verified}
 						</CardTitle>
 					</CardHeader>
 				</Card>
@@ -191,10 +217,10 @@ export function UsersPage() {
 					<CardHeader className="pb-2">
 						<CardDescription className="flex items-center gap-1">
 							<UserX className="h-3.5 w-3.5" />
-							Suspended
+							Banned
 						</CardDescription>
 						<CardTitle className="text-2xl text-red-600">
-							{stats.suspended}
+							{stats.banned}
 						</CardTitle>
 					</CardHeader>
 				</Card>
@@ -218,8 +244,7 @@ export function UsersPage() {
 					<SelectContent>
 						<SelectItem value="all">All Status</SelectItem>
 						<SelectItem value="active">Active</SelectItem>
-						<SelectItem value="inactive">Inactive</SelectItem>
-						<SelectItem value="suspended">Suspended</SelectItem>
+						<SelectItem value="banned">Banned</SelectItem>
 					</SelectContent>
 				</Select>
 				<Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -228,23 +253,8 @@ export function UsersPage() {
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="all">All Roles</SelectItem>
-						<SelectItem value="owner">Owner</SelectItem>
 						<SelectItem value="admin">Admin</SelectItem>
-						<SelectItem value="manager">Manager</SelectItem>
-						<SelectItem value="staff">Staff</SelectItem>
-					</SelectContent>
-				</Select>
-				<Select value={tenantFilter} onValueChange={setTenantFilter}>
-					<SelectTrigger className="w-[180px]">
-						<SelectValue placeholder="Tenant" />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="all">All Tenants</SelectItem>
-						{uniqueTenants.map((tenant) => (
-							<SelectItem key={tenant} value={tenant}>
-								{tenant}
-							</SelectItem>
-						))}
+						<SelectItem value="user">User</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
@@ -255,95 +265,161 @@ export function UsersPage() {
 					<TableHeader>
 						<TableRow>
 							<TableHead>User</TableHead>
-							<TableHead>Tenant</TableHead>
 							<TableHead>Role</TableHead>
 							<TableHead>Status</TableHead>
-							<TableHead>MFA</TableHead>
-							<TableHead>Last Login</TableHead>
+							<TableHead>Verified</TableHead>
+							<TableHead>Joined</TableHead>
 							<TableHead className="w-[50px]"></TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{filteredUsers.map((user) => (
-							<TableRow key={user.id}>
-								<TableCell>
-									<div className="flex items-center gap-3">
-										<Avatar className="h-9 w-9">
-											<AvatarFallback className="bg-primary/10 text-xs">
-												{user.name
-													.split(" ")
-													.map((n) => n[0])
-													.join("")}
-											</AvatarFallback>
-										</Avatar>
-										<div>
-											<p className="font-medium">{user.name}</p>
-											<p className="text-xs text-muted-foreground">
-												{user.email}
-											</p>
-										</div>
-									</div>
-								</TableCell>
-								<TableCell className="text-muted-foreground">
-									{user.tenantName}
-								</TableCell>
-								<TableCell>
-									<Badge className={roleConfig[user.role].color}>
-										{roleConfig[user.role].label}
-									</Badge>
-								</TableCell>
-								<TableCell>
-									<Badge className={statusConfig[user.status].color}>
-										{statusConfig[user.status].label}
-									</Badge>
-								</TableCell>
-								<TableCell>
-									{user.mfaEnabled ? (
-										<Shield className="h-4 w-4 text-emerald-500" />
-									) : (
-										<span className="text-muted-foreground text-xs">Off</span>
-									)}
-								</TableCell>
-								<TableCell className="text-muted-foreground">
-									{getRelativeTime(user.lastLoginAt)}
-								</TableCell>
-								<TableCell>
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<Button variant="ghost" size="icon">
-												<MoreHorizontal className="h-4 w-4" />
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem>View Profile</DropdownMenuItem>
-											<DropdownMenuItem>
-												<Mail className="h-4 w-4 mr-2" />
-												Send Email
-											</DropdownMenuItem>
-											<DropdownMenuItem>
-												<Key className="h-4 w-4 mr-2" />
-												Reset Password
-											</DropdownMenuItem>
-											<DropdownMenuSeparator />
-											{user.status === "active" ? (
-												<DropdownMenuItem className="text-destructive">
-													<Ban className="h-4 w-4 mr-2" />
-													Suspend User
-												</DropdownMenuItem>
-											) : (
-												<DropdownMenuItem className="text-emerald-600">
-													<UserCheck className="h-4 w-4 mr-2" />
-													Reactivate
-												</DropdownMenuItem>
-											)}
-										</DropdownMenuContent>
-									</DropdownMenu>
+						{filteredUsers.length === 0 ? (
+							<TableRow>
+								<TableCell
+									colSpan={6}
+									className="text-center py-8 text-muted-foreground"
+								>
+									No users found
 								</TableCell>
 							</TableRow>
-						))}
+						) : (
+							filteredUsers.map((user) => {
+								const status = getUserStatus(user);
+								const role = user.role || "user";
+								return (
+									<TableRow key={user.id}>
+										<TableCell>
+											<div className="flex items-center gap-3">
+												<Avatar className="h-9 w-9">
+													{user.image && (
+														<AvatarImage
+															src={user.image}
+															alt={user.name || ""}
+														/>
+													)}
+													<AvatarFallback className="bg-primary/10 text-xs">
+														{(user.name || user.email || "U")
+															.split(" ")
+															.map((n) => n[0])
+															.join("")
+															.slice(0, 2)
+															.toUpperCase()}
+													</AvatarFallback>
+												</Avatar>
+												<div>
+													<p className="font-medium">
+														{user.name || "Unnamed"}
+													</p>
+													<p className="text-xs text-muted-foreground">
+														{user.email}
+													</p>
+												</div>
+											</div>
+										</TableCell>
+										<TableCell>
+											<Badge
+												className={
+													roleConfig[role]?.color || roleConfig.user.color
+												}
+											>
+												{roleConfig[role]?.label || role}
+											</Badge>
+										</TableCell>
+										<TableCell>
+											<Badge className={statusConfig[status].color}>
+												{statusConfig[status].label}
+											</Badge>
+										</TableCell>
+										<TableCell>
+											{user.emailVerified ? (
+												<Shield className="h-4 w-4 text-emerald-500" />
+											) : (
+												<span className="text-muted-foreground text-xs">
+													No
+												</span>
+											)}
+										</TableCell>
+										<TableCell className="text-muted-foreground">
+											{formatDate(user.createdAt)}
+										</TableCell>
+										<TableCell>
+											<UserActionsMenu user={user} onRefresh={mutate} />
+										</TableCell>
+									</TableRow>
+								);
+							})
+						)}
 					</TableBody>
 				</Table>
 			</Card>
 		</div>
+	);
+}
+
+// User actions dropdown menu component
+function UserActionsMenu({
+	user,
+	onRefresh,
+}: {
+	user: User;
+	onRefresh: () => void;
+}) {
+	const { banUser, isMutating: isBanning } = useBanUser(user.id);
+	const { unbanUser, isMutating: isUnbanning } = useUnbanUser(user.id);
+	const { setUserRole, isMutating: isSettingRole } = useSetUserRole(user.id);
+
+	const handleBan = async () => {
+		await banUser("Banned by admin");
+		onRefresh();
+	};
+
+	const handleUnban = async () => {
+		await unbanUser();
+		onRefresh();
+	};
+
+	const handleToggleAdmin = async () => {
+		const newRole = user.role === "admin" ? "user" : "admin";
+		await setUserRole(newRole);
+		onRefresh();
+	};
+
+	const isLoading = isBanning || isUnbanning || isSettingRole;
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button variant="ghost" size="icon" disabled={isLoading}>
+					<MoreHorizontal className="h-4 w-4" />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end">
+				<DropdownMenuItem>
+					<Mail className="h-4 w-4 mr-2" />
+					Send Email
+				</DropdownMenuItem>
+				<DropdownMenuItem>
+					<Key className="h-4 w-4 mr-2" />
+					Reset Password
+				</DropdownMenuItem>
+				<DropdownMenuSeparator />
+				<DropdownMenuItem onClick={handleToggleAdmin}>
+					<Shield className="h-4 w-4 mr-2" />
+					{user.role === "admin" ? "Remove Admin" : "Make Admin"}
+				</DropdownMenuItem>
+				<DropdownMenuSeparator />
+				{!user.banned ? (
+					<DropdownMenuItem className="text-destructive" onClick={handleBan}>
+						<Ban className="h-4 w-4 mr-2" />
+						Ban User
+					</DropdownMenuItem>
+				) : (
+					<DropdownMenuItem className="text-emerald-600" onClick={handleUnban}>
+						<UserCheck className="h-4 w-4 mr-2" />
+						Unban User
+					</DropdownMenuItem>
+				)}
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
