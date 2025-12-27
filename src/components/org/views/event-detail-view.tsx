@@ -230,13 +230,12 @@ export function EventDetailView({ eventId }: EventDetailViewProps) {
 		try {
 			await apiFetch(`/event-dates/${editingDate.id}`, {
 				method: "PUT",
-				body: JSON.stringify({
+				body: {
 					event_id: eventId,
 					date: editingDate.date,
 					start_time: editingDate.start_time,
 					end_time: editingDate.end_time || null,
-				}),
-				headers: { "Content-Type": "application/json" },
+				} as Record<string, unknown>,
 			});
 			mutateDates();
 			mutate();

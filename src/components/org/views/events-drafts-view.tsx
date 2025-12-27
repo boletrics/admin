@@ -14,7 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { useEvents, useDeleteEvent } from "@/lib/api/hooks/use-events";
+import { useEvents } from "@/lib/api/hooks/use-events";
+import { apiFetch } from "@/lib/api/client";
 import { useOrganizations } from "@/lib/api/hooks/use-organizations";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -77,8 +78,8 @@ export function EventsDraftsView() {
 	const handleDelete = async () => {
 		if (!deleteEventId) return;
 		try {
-			const { deleteEvent } = useDeleteEvent(deleteEventId);
-			await deleteEvent();
+			// Use apiFetch directly since hooks can't be called conditionally
+			await apiFetch(`/events/${deleteEventId}`, { method: "DELETE" });
 			mutate();
 			toast.success("Evento eliminado");
 			setDeleteEventId(null);
@@ -181,7 +182,7 @@ export function EventsDraftsView() {
 								<div className="flex gap-2">
 									<Button
 										variant="outline"
-										className="flex-1 gap-2 bg-transparent"
+										className="flex-1 gap-2"
 										size="sm"
 										asChild
 									>

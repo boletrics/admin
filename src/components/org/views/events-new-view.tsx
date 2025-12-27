@@ -155,16 +155,16 @@ export function EventsNewView() {
 				try {
 					await apiFetch("/event-dates", {
 						method: "POST",
-						body: JSON.stringify({
+						body: {
 							event_id: event.id,
 							date: eventDate.date,
 							start_time: eventDate.start_time,
 							end_time: eventDate.end_time || null,
-						}),
-						headers: { "Content-Type": "application/json" },
+						} as Record<string, unknown>,
 					});
 				} catch (err) {
-					console.error("Error creating event date:", err);
+					console.error(`Error creating event date ${eventDate.date}:`, err);
+					toast.error(`Error al crear la fecha ${eventDate.date}`);
 				}
 			}
 
@@ -176,17 +176,17 @@ export function EventsNewView() {
 				try {
 					await apiFetch("/ticket-types", {
 						method: "POST",
-						body: JSON.stringify({
+						body: {
 							event_id: event.id,
 							name: ticket.name,
 							description: ticket.description || null,
 							price: ticket.price,
 							quantity_total: ticket.quantity,
-						}),
-						headers: { "Content-Type": "application/json" },
+						} as Record<string, unknown>,
 					});
 				} catch (err) {
-					console.error("Error creating ticket type:", err);
+					console.error(`Error creating ticket type ${ticket.name}:`, err);
+					toast.error(`Error al crear el tipo de boleto ${ticket.name}`);
 				}
 			}
 
@@ -817,10 +817,18 @@ export function EventsNewView() {
 							<CardTitle>Vista previa</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<Button variant="outline" className="w-full gap-2 bg-transparent">
+							<Button
+								variant="outline"
+								className="w-full gap-2"
+								disabled
+								title="Guarda el evento primero para ver la vista previa"
+							>
 								<Eye className="h-4 w-4" />
 								Ver como cliente
 							</Button>
+							<p className="text-xs text-muted-foreground mt-2 text-center">
+								Guarda el evento para habilitar la vista previa
+							</p>
 						</CardContent>
 					</Card>
 				</div>
