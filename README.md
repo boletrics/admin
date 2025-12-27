@@ -67,7 +67,7 @@ Open [http://localhost:3003](http://localhost:3003) to view the dashboard.
 
 ## Project Structure
 
-```
+```text
 admin/
 ├── src/
 │   ├── app/                    # Next.js App Router pages

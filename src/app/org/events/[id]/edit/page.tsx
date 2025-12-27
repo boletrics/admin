@@ -41,8 +41,8 @@ import {
 	useUpdateEvent,
 	useEventDates,
 	useAddEventDate,
-	useRemoveEventDate,
 } from "@/lib/api/hooks/use-events";
+import { apiFetch } from "@/lib/api/client";
 import { useVenues, useCreateVenue } from "@/lib/api/hooks/use-venues";
 import { useOrganizations } from "@/lib/api/hooks/use-organizations";
 import type { EventCategory } from "@/lib/api/types";
@@ -241,10 +241,9 @@ export default function EditEventPage() {
 	const removeEventDate = async (id: string, isNew?: boolean) => {
 		if (eventDates.length > 1) {
 			if (!isNew) {
-				// Remove from server
+				// Remove from server using apiFetch directly (hooks can't be called conditionally)
 				try {
-					const { removeDate } = useRemoveEventDate(eventId, id);
-					await removeDate();
+					await apiFetch(`/event-dates/${id}`, { method: "DELETE" });
 					toast.success("Fecha eliminada");
 				} catch {
 					toast.error("Error al eliminar la fecha");
@@ -677,9 +676,15 @@ export default function EditEventPage() {
 							<CardTitle>Vista previa</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<Button variant="outline" className="w-full gap-2 bg-transparent">
-								<Eye className="h-4 w-4" />
-								Ver como cliente
+							<Button variant="outline" className="w-full gap-2" asChild>
+								<a
+									href={`https://tickets-local.boletrics.workers.dev/events/${event.slug}`}
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<Eye className="h-4 w-4" />
+									Ver como cliente
+								</a>
 							</Button>
 						</CardContent>
 					</Card>

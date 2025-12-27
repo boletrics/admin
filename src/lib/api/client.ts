@@ -36,7 +36,7 @@ export class ApiError extends Error {
 // Base Fetcher with JWT
 // ============================================================================
 
-export type FetcherOptions = RequestInit & {
+export type FetcherOptions = Omit<RequestInit, "body"> & {
 	jwt?: string | null;
 	body?: RequestInit["body"] | Record<string, unknown>; // Allow object bodies
 };
@@ -48,11 +48,11 @@ export async function apiFetch<T>(
 	endpoint: string,
 	options: FetcherOptions = {},
 ): Promise<T> {
-	const { jwt, ...fetchOptions } = options;
+	const { jwt, body: inputBody, ...restOptions } = options;
 
 	const headers: Record<string, string> = {
 		Accept: "application/json",
-		...(fetchOptions.headers as Record<string, string>),
+		...(restOptions.headers as Record<string, string>),
 	};
 
 	const token = jwt ?? (await getClientJwt());
@@ -60,13 +60,21 @@ export async function apiFetch<T>(
 		headers.Authorization = `Bearer ${token}`;
 	}
 
+	// Process body - convert objects to JSON strings
+	let processedBody: BodyInit | null | undefined;
 	if (
-		fetchOptions.body &&
-		typeof fetchOptions.body === "object" &&
-		!(fetchOptions.body instanceof FormData)
+		inputBody &&
+		typeof inputBody === "object" &&
+		!(inputBody instanceof FormData) &&
+		!(inputBody instanceof Blob) &&
+		!(inputBody instanceof ArrayBuffer) &&
+		!(inputBody instanceof URLSearchParams) &&
+		!(inputBody instanceof ReadableStream)
 	) {
 		headers["Content-Type"] = "application/json";
-		fetchOptions.body = JSON.stringify(fetchOptions.body);
+		processedBody = JSON.stringify(inputBody);
+	} else {
+		processedBody = inputBody as BodyInit | null | undefined;
 	}
 
 	// Determine base URL based on endpoint prefix
@@ -88,8 +96,9 @@ export async function apiFetch<T>(
 	}
 
 	const response = await fetch(url, {
-		...fetchOptions,
+		...restOptions,
 		headers,
+		body: processedBody,
 	});
 
 	const contentType = response.headers.get("content-type") ?? "";

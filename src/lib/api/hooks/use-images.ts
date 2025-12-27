@@ -32,6 +32,7 @@ export interface UseImageUploadOptions {
  * 4. Return the delivery URL and blur placeholder
  */
 export function useImageUpload(options: UseImageUploadOptions = {}) {
+	const { context, entityId, onSuccess, onError } = options;
 	const [isUploading, setIsUploading] = useState(false);
 	const [progress, setProgress] = useState(0);
 	const [error, setError] = useState<Error | null>(null);
@@ -52,13 +53,10 @@ export function useImageUpload(options: UseImageUploadOptions = {}) {
 					"/images/upload-url",
 					{
 						method: "POST",
-						body: JSON.stringify({
-							context: options.context,
-							entityId: options.entityId,
-						}),
-						headers: {
-							"Content-Type": "application/json",
-						},
+						body: {
+							context,
+							entityId,
+						} as Record<string, unknown>,
 					},
 				);
 
@@ -89,18 +87,19 @@ export function useImageUpload(options: UseImageUploadOptions = {}) {
 					blurDataUrl,
 				};
 
-				options.onSuccess?.(result);
+				onSuccess?.(result);
 				return result;
 			} catch (err) {
-				const error = err instanceof Error ? err : new Error("Upload failed");
-				setError(error);
-				options.onError?.(error);
+				const uploadError =
+					err instanceof Error ? err : new Error("Upload failed");
+				setError(uploadError);
+				onError?.(uploadError);
 				return null;
 			} finally {
 				setIsUploading(false);
 			}
 		},
-		[options],
+		[context, entityId, onSuccess, onError],
 	);
 
 	return {

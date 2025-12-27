@@ -266,6 +266,7 @@ export function useAddTicketType(eventId: string) {
 			event_id: eventId,
 		});
 		revalidate(`/events/${eventId}`);
+		revalidate(/\/ticket-types/);
 		return result;
 	};
 
