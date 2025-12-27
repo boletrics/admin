@@ -1,3 +1,12 @@
+# [1.6.0](https://github.com/boletrics/admin/compare/v1.5.0...v1.6.0) (2025-12-27)
+
+
+### Features
+
+* **api:** add venue, events and venue management ([c888197](https://github.com/boletrics/admin/commit/c888197ac8790621553347c05e2c952ff1059519))
+* **api:** enhance admin user management with new hooks and API integration ([717f82c](https://github.com/boletrics/admin/commit/717f82c6af436f935dcf06c0378922ac0baaf199))
+* **events:** add ticket type creation functionality in event view ([9812fe8](https://github.com/boletrics/admin/commit/9812fe8ddcbad277bd9fa89e1b8f3f1ab9d2d899))
+
 # [1.5.0](https://github.com/boletrics/admin/compare/v1.4.1...v1.5.0) (2025-12-25)
 
 
